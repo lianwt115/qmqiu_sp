@@ -1,6 +1,7 @@
 package com.lwt.qmqiu_sps1.dao
 
 import com.lwt.qmqiu_sps1.bean.BaseUser
+import com.lwt.qmqiu_sps1.bean.LoginLog
 import com.lwt.qmqiu_sps1.myinterface.BaseDaoInterface
 import com.lwt.qmqiu_sps1.myinterface.BaseUserDaoInterface
 import com.mongodb.client.result.DeleteResult
@@ -12,38 +13,31 @@ import org.springframework.data.mongodb.core.query.Query
 import org.springframework.data.mongodb.core.query.Update
 import org.springframework.stereotype.Repository
 
-@Repository("baseUserDao")
-class BaseUserDao: BaseDaoInterface<BaseUser>,BaseUserDaoInterface<BaseUser> {
+@Repository("loginLogDao")
+class LoginLogDao: BaseDaoInterface<LoginLog> {
 
 
     @Autowired
     private  lateinit var  mongoTemplate: MongoTemplate
 
-    override fun getAll(key: String, value: Any?): List<BaseUser> {
+    override fun getAll(key: String, value: Any?): List<LoginLog> {
 
         if (key == "" || value == null)
-            return mongoTemplate.findAll(BaseUser::class.java)
+            return mongoTemplate.findAll(LoginLog::class.java)
         val query = Query(Criteria.where(key).`is`(value))
 
-        return mongoTemplate.find(query,BaseUser::class.java)
-
+        return mongoTemplate.find(query,LoginLog::class.java)
     }
 
-    override fun insert(user: BaseUser) {
+    override fun insert(log: LoginLog) {
 
-        return mongoTemplate.insert(user)
+        return mongoTemplate.insert(log)
     }
 
-    override fun findById(_id: String): BaseUser? {
+    override fun findById(_id: String): LoginLog? {
         val query = Query(Criteria.where("_id").`is`(_id))
 
-        return mongoTemplate.findOne(query,BaseUser::class.java)
-    }
-
-    override fun userExist(name: String): BaseUser? {
-        val query = Query(Criteria.where("name").`is`(name))
-
-        return mongoTemplate.findOne(query,BaseUser::class.java)
+        return mongoTemplate.findOne(query,LoginLog::class.java)
     }
 
     override fun updata(_id: String, data: HashMap<String, Any>): UpdateResult {
@@ -62,13 +56,13 @@ class BaseUserDao: BaseDaoInterface<BaseUser>,BaseUserDaoInterface<BaseUser> {
 
        }
 
-        return mongoTemplate.updateMulti(query, update!!, BaseUser::class.java)
+        return mongoTemplate.updateMulti(query, update!!, LoginLog::class.java)
 
     }
 
     override fun delete(_id: String): DeleteResult {
         val criteria = Criteria.where("_id").`is`(_id)
         val query = Query(criteria)
-        return mongoTemplate.remove(query,BaseUser::class.java)
+        return mongoTemplate.remove(query,LoginLog::class.java)
     }
 }

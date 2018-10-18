@@ -3,18 +3,26 @@ package com.lwt.qmqiu_sps1.controller
 
 import com.lwt.qmqiu_sps1.bean.BaseHttpResponse
 import com.lwt.qmqiu_sps1.bean.BaseUser
-import com.lwt.qmqiu_sps1.bean.RSATest
+import com.lwt.qmqiu_sps1.bean.LoginLog
 import com.lwt.qmqiu_sps1.service.BaseUserService
+import com.lwt.qmqiu_sps1.service.LoginLogService
 import com.lwt.qmqiu_sps1.utils.RSAUtils
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.scheduling.annotation.Async
 import org.springframework.util.Base64Utils
 import org.springframework.web.bind.annotation.*
-import java.security.KeyPairGenerator
 
 
 @RestController
 @RequestMapping("/user")
 class BaseUserController {
+
+    companion object {
+
+       private val logger = LoggerFactory.getLogger(BaseUserController::class.java)
+
+    }
 
     enum class BaseUserErr(var code:Int,var message:String){
 
@@ -26,6 +34,8 @@ class BaseUserController {
 
     @Autowired
     private lateinit var userService: BaseUserService
+    @Autowired
+    private lateinit var loginService: LoginLogService
 
     @GetMapping("/getAll")
     fun getAllUser(): BaseHttpResponse<List<BaseUser>> {
@@ -39,7 +49,6 @@ class BaseUserController {
 
     @PostMapping("/regist")
     fun insert(@RequestParam("name") name:String, @RequestParam("password") password:String): BaseHttpResponse<BaseUser> {
-
 
         var baseR=BaseHttpResponse<BaseUser>()
 
@@ -66,11 +75,13 @@ class BaseUserController {
             }
         }
 
+        logger.info("path:/regist  name:$name success:${baseR.data != null}")
+
         return baseR
     }
 
     @PostMapping("/login")
-    fun login(@RequestParam("name") name:String, @RequestParam("password") password:String,@RequestParam("auto") auto:Boolean): BaseHttpResponse<BaseUser> {
+    fun login(@RequestParam("name") name:String, @RequestParam("password") password:String,@RequestParam("auto") auto:Boolean,@RequestParam("loginWhere") loginWhere:String,@RequestParam("latitude") latitude:Double,@RequestParam("longitude") longitude:Double): BaseHttpResponse<BaseUser> {
 
         var baseR=BaseHttpResponse<BaseUser>()
 
@@ -91,7 +102,14 @@ class BaseUserController {
                     var  savePassword = if (auto)userFind!!.password!! else String(RSAUtils.decryptData(Base64Utils.decodeFromString(userFind!!.password!!),RSAUtils.loadPrivateKey(userFind!!.privateKey!!))!!)
 
                     if (savePassword  == password){
+
+                        var time = System.currentTimeMillis()
+                        userFind.lastLoginTime = time
                         baseR.data = userFind
+
+                        updataLoginTime(userFind,time)
+                        insertLoginLog(userFind,time,loginWhere,latitude,longitude)
+
                     }else{
 
                         baseR.code = BaseUserErr.USER_PASSWORDERR.code
@@ -102,8 +120,11 @@ class BaseUserController {
             }
         }
 
+        logger.info("path:/login  name:$name success:${baseR.data != null}")
+
         return baseR
     }
+
 
     @PostMapping("/delete")
     fun delete(@RequestParam("_id") _id:String): BaseHttpResponse<Boolean> {
@@ -170,6 +191,24 @@ class BaseUserController {
         baseR.data = user
 
         return baseR
+    }
+
+    @Async
+    fun updataLoginTime(baseUser: BaseUser, time: Long){
+
+        //更新最近一次更新时间
+        var updata =HashMap<String,Any>()
+
+        updata["lastLoginTime"] = time
+
+        logger.info("path:/login(更新登录时间)  name:${baseUser.name} success:${userService.updata(baseUser._id!!,updata).modifiedCount > 0}")
+
+    }
+
+    @Async
+    fun insertLoginLog(userFind: BaseUser, time: Long, loginWhere: String, latitude: Double, longitude: Double) {
+
+        loginService.insert(LoginLog(null,userFind.name,loginWhere,latitude,longitude,time))
     }
 
 

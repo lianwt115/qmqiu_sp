@@ -17,8 +17,8 @@ class BaseUserService:BaseDaoInterface<BaseUser>, BaseUserDaoInterface<BaseUser>
     private lateinit var  baseUserDao: BaseUserDao
 
 
-    override fun getAll(): List<BaseUser> {
-        return baseUserDao.getAll()
+    override fun getAll(key: String, value: Any?): List<BaseUser> {
+        return baseUserDao.getAll(key,value)
     }
 
     override fun insert(user: BaseUser) {
