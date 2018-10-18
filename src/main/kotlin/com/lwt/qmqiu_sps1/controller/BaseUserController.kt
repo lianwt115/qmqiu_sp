@@ -70,7 +70,7 @@ class BaseUserController {
     }
 
     @PostMapping("/login")
-    fun login(@RequestParam("name") name:String, @RequestParam("password") password:String): BaseHttpResponse<BaseUser> {
+    fun login(@RequestParam("name") name:String, @RequestParam("password") password:String,@RequestParam("auto") auto:Boolean): BaseHttpResponse<BaseUser> {
 
         var baseR=BaseHttpResponse<BaseUser>()
 
@@ -85,21 +85,19 @@ class BaseUserController {
             }
 
             false -> {
-                //存在就验证密码,将密文解密为明文对比
 
-                var privateKey = RSAUtils.loadPrivateKey(userFind!!.privateKey!!)
+                    //如果是自动登录,就验证密文,手动登录就将密文解密为明文对比
 
+                    var  savePassword = if (auto)userFind!!.password!! else String(RSAUtils.decryptData(Base64Utils.decodeFromString(userFind!!.password!!),RSAUtils.loadPrivateKey(userFind!!.privateKey!!))!!)
 
-                var  savePassword = String(RSAUtils.decryptData(Base64Utils.decodeFromString(userFind!!.password!!),privateKey)!!)
+                    if (savePassword  == password){
+                        baseR.data = userFind
+                    }else{
 
-                if (savePassword  == password){
-                    baseR.data = userFind
-                }else{
+                        baseR.code = BaseUserErr.USER_PASSWORDERR.code
+                        baseR.message = BaseUserErr.USER_PASSWORDERR.message
 
-                    baseR.code = BaseUserErr.USER_PASSWORDERR.code
-                    baseR.message = BaseUserErr.USER_PASSWORDERR.message
-
-                }
+                    }
 
             }
         }
