@@ -1,5 +1,7 @@
 package com.lwt.qmqiu_sps1.websocket
 
+import com.google.gson.Gson
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import javax.websocket.server.ServerEndpoint
 import java.io.IOException
@@ -22,6 +24,12 @@ class QMWebSocket {
 
         //concurrent包的线程安全Set，用来存放每个客户端对应的MyWebSocket对象。
         private val webSocketSet = CopyOnWriteArraySet<QMWebSocket>()
+
+
+
+        private val logger = LoggerFactory.getLogger(QMWebSocket::class.java)
+
+
     }
 
 
@@ -36,11 +44,11 @@ class QMWebSocket {
         this.session = session
         webSocketSet.add(this)     //加入set中
         addOnlineCount()           //在线数加1
-        println("有新连接加入！当前在线人数为" + getOnlineCount())
+        logger.info("有新连接加入！当前在线人数为:${getOnlineCount()}")
         try {
             sendMessage("你好")
         } catch (e: IOException) {
-            println("IO异常")
+            logger.error("IO异常")
         }
 
     }
@@ -52,7 +60,7 @@ class QMWebSocket {
     fun onClose() {
         webSocketSet.remove(this)  //从set中删除
         subOnlineCount()           //在线数减1
-        println("有一连接关闭！当前在线人数为" + getOnlineCount())
+        logger.info("有一连接关闭！当前在线人数为:${getOnlineCount()}")
     }
 
     /**
@@ -63,7 +71,14 @@ class QMWebSocket {
     @OnMessage
     fun onMessage(message: String, session: Session) {
 
-        println("来自客户端的消息(id:${session.id}):$message")
+        logger.info("来自客户端的消息(id:${session.id}):$message")
+
+
+        var gson = Gson()
+        var qmMessage = gson.fromJson<QMMessage>(message,QMMessage::class.java)
+
+        logger.info("解析:${qmMessage.toString()}")
+
         //群发消息
         for (item in webSocketSet) {
             try {
@@ -78,16 +93,16 @@ class QMWebSocket {
 
     @OnError
     fun onError(session: Session, error: Throwable) {
-        println("发生错误")
+        logger.error("error:${error.message}")
         error.printStackTrace()
     }
 
 
     @Throws(IOException::class)
     fun sendMessage(message: String) {
-        println("发送给客户端的消息(id:${this.session?.id}):$message")
-        this.session?.getBasicRemote()?.sendText(message.plus("来自客户端"))
-        //this.session.getAsyncRemote().sendText(message);
+        logger.info("发送给客户端的消息(id:${this.session?.id}):$message")
+        //this.session?.getBasicRemote()?.sendText(message.plus("来自客户端"))
+        this.session?.asyncRemote?.sendText(message.plus(":来自客户端"))
     }
 
 
