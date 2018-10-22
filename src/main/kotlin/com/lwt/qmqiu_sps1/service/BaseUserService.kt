@@ -38,9 +38,9 @@ class BaseUserService:BaseDaoInterface<BaseUser>, BaseUserDaoInterface<BaseUser>
         return baseUserDao.delete(_id)
     }
 
-    override fun userExist(name: String): BaseUser? {
+    override fun userExist(key:String,value:String): BaseUser? {
 
-        return baseUserDao.userExist(name)
+        return baseUserDao.userExist(key,value)
     }
 
 

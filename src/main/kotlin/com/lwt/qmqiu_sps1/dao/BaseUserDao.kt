@@ -40,8 +40,8 @@ class BaseUserDao: BaseDaoInterface<BaseUser>,BaseUserDaoInterface<BaseUser> {
         return mongoTemplate.findOne(query,BaseUser::class.java)
     }
 
-    override fun userExist(name: String): BaseUser? {
-        val query = Query(Criteria.where("name").`is`(name))
+    override fun userExist(key:String,value:String): BaseUser? {
+        val query = Query(Criteria.where(key).`is`(value))
 
         return mongoTemplate.findOne(query,BaseUser::class.java)
     }

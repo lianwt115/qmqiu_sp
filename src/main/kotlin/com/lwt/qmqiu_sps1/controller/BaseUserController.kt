@@ -52,7 +52,7 @@ class BaseUserController {
 
         var baseR=BaseHttpResponse<BaseUser>()
 
-        when (userService.userExist(name) != null) {
+        when (userService.userExist("name",name) != null) {
 
             true -> {
 
@@ -85,7 +85,7 @@ class BaseUserController {
 
         var baseR=BaseHttpResponse<BaseUser>()
 
-        var userFind = userService.userExist(name)
+        var userFind = userService.userExist("name",name)
 
         when (userFind == null) {
 
@@ -189,6 +189,17 @@ class BaseUserController {
         }
 
         baseR.data = user
+
+        return baseR
+    }
+
+    @GetMapping("/findByName")
+    fun findByName(@RequestParam("name") name:String): BaseHttpResponse<Boolean> {
+
+        var baseR=BaseHttpResponse<Boolean>()
+
+
+        baseR.data = userService.userExist("name",name) != null
 
         return baseR
     }
