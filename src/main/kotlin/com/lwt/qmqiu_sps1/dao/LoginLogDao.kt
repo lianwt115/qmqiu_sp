@@ -1,9 +1,7 @@
 package com.lwt.qmqiu_sps1.dao
 
-import com.lwt.qmqiu_sps1.bean.BaseUser
 import com.lwt.qmqiu_sps1.bean.LoginLog
 import com.lwt.qmqiu_sps1.myinterface.BaseDaoInterface
-import com.lwt.qmqiu_sps1.myinterface.BaseUserDaoInterface
 import com.mongodb.client.result.DeleteResult
 import com.mongodb.client.result.UpdateResult
 import org.springframework.beans.factory.annotation.Autowired
@@ -34,8 +32,8 @@ class LoginLogDao: BaseDaoInterface<LoginLog> {
         return mongoTemplate.insert(log)
     }
 
-    override fun findById(_id: String): LoginLog? {
-        val query = Query(Criteria.where("_id").`is`(_id))
+    override fun findByKey(key: String, value: Any): LoginLog? {
+        val query = Query(Criteria.where(key).`is`(value))
 
         return mongoTemplate.findOne(query,LoginLog::class.java)
     }

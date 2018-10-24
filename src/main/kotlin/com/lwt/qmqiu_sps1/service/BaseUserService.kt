@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service
 @Service("baseUserService")
 class BaseUserService:BaseDaoInterface<BaseUser>, BaseUserDaoInterface<BaseUser> {
 
+
     @Autowired
     private lateinit var  baseUserDao: BaseUserDao
 
@@ -25,9 +26,9 @@ class BaseUserService:BaseDaoInterface<BaseUser>, BaseUserDaoInterface<BaseUser>
         return baseUserDao.insert(user)
     }
 
-    override fun findById(_id: String): BaseUser? {
-        return baseUserDao.findById(_id)
-    }
+   override fun findByKey(key: String, value: Any): BaseUser? {
+       return baseUserDao.findByKey(key,value)
+   }
 
     override fun updata(_id: String, data: HashMap<String, Any>): UpdateResult {
 
@@ -38,10 +39,7 @@ class BaseUserService:BaseDaoInterface<BaseUser>, BaseUserDaoInterface<BaseUser>
         return baseUserDao.delete(_id)
     }
 
-    override fun userExist(key:String,value:String): BaseUser? {
 
-        return baseUserDao.userExist(key,value)
-    }
 
 
 }

@@ -16,6 +16,7 @@ import org.springframework.stereotype.Repository
 class BaseUserDao: BaseDaoInterface<BaseUser>,BaseUserDaoInterface<BaseUser> {
 
 
+
     @Autowired
     private  lateinit var  mongoTemplate: MongoTemplate
 
@@ -34,13 +35,7 @@ class BaseUserDao: BaseDaoInterface<BaseUser>,BaseUserDaoInterface<BaseUser> {
         return mongoTemplate.insert(user)
     }
 
-    override fun findById(_id: String): BaseUser? {
-        val query = Query(Criteria.where("_id").`is`(_id))
-
-        return mongoTemplate.findOne(query,BaseUser::class.java)
-    }
-
-    override fun userExist(key:String,value:String): BaseUser? {
+    override fun findByKey(key: String, value: Any): BaseUser? {
         val query = Query(Criteria.where(key).`is`(value))
 
         return mongoTemplate.findOne(query,BaseUser::class.java)

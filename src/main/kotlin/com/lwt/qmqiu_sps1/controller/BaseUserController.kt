@@ -52,7 +52,7 @@ class BaseUserController {
 
         var baseR=BaseHttpResponse<BaseUser>()
 
-        when (userService.userExist("name",name) != null) {
+        when (userService.findByKey("name",name) != null) {
 
             true -> {
 
@@ -85,7 +85,7 @@ class BaseUserController {
 
         var baseR=BaseHttpResponse<BaseUser>()
 
-        var userFind = userService.userExist("name",name)
+        var userFind = userService.findByKey("name",name)
 
         when (userFind == null) {
 
@@ -181,7 +181,7 @@ class BaseUserController {
     fun findById(@RequestParam("_id") _id:String): BaseHttpResponse<BaseUser> {
 
         var baseR=BaseHttpResponse<BaseUser>()
-        var user = userService.findById(_id)
+        var user = userService.findByKey("_id",_id)
 
         if (user == null){
 
@@ -199,7 +199,7 @@ class BaseUserController {
         var baseR=BaseHttpResponse<Boolean>()
 
 
-        baseR.data = userService.userExist("name",name) != null
+        baseR.data = userService.findByKey("name",name) != null
 
         return baseR
     }

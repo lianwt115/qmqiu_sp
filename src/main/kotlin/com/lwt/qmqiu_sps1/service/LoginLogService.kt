@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service
 @Service("loginLogService")
 class LoginLogService:BaseDaoInterface<LoginLog> {
 
+
     @Autowired
     private lateinit var  loginLogDao: LoginLogDao
 
@@ -27,8 +28,9 @@ class LoginLogService:BaseDaoInterface<LoginLog> {
         return loginLogDao.insert(user)
     }
 
-    override fun findById(_id: String): LoginLog? {
-        return loginLogDao.findById(_id)
+    override fun findByKey(key: String, value: Any): LoginLog? {
+
+        return loginLogDao.findByKey(key,value)
     }
 
     override fun updata(_id: String, data: HashMap<String, Any>): UpdateResult {
