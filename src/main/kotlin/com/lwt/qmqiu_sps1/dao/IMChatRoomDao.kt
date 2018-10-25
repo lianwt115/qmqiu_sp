@@ -26,7 +26,9 @@ class IMChatRoomDao: BaseDaoInterface<IMChatRoom>,IMChatRoomDaoInterface<IMChatR
 
         if (key == "" || value == null)
             return mongoTemplate.findAll(IMChatRoom::class.java)
+
         val query = Query(Criteria.where(key).`is`(value))
+
         query.addCriteria(Criteria.where("status").`is`(true))
 
 
@@ -46,15 +48,18 @@ class IMChatRoomDao: BaseDaoInterface<IMChatRoom>,IMChatRoomDaoInterface<IMChatR
         return mongoTemplate.find(query,IMChatRoom::class.java)
     }
 
-    override fun getRoomOne(roomName: String, latitude: Double, longitude: Double): IMChatRoom? {
+    override fun getRoomOne(roomName: String, latitude: Double, longitude: Double, check: Boolean): IMChatRoom? {
 
         var query = Query(Criteria.where("roomName").`is`(roomName))
 
         query.addCriteria(Criteria.where("status").`is`(true))
 
-        query.addCriteria(Criteria.where("latitude").gte(latitude-0.0001).lte(latitude+0.0001))
+        if (check) {
+            query.addCriteria(Criteria.where("latitude").gte(latitude-0.0001).lte(latitude+0.0001))
 
-        query.addCriteria(Criteria.where("longitude").gte(longitude-0.0001).lte(longitude+0.0001))
+            query.addCriteria(Criteria.where("longitude").gte(longitude-0.0001).lte(longitude+0.0001))
+        }
+
 
         return mongoTemplate.findOne(query,IMChatRoom::class.java)
     }

@@ -33,6 +33,7 @@ class IMChatRoomController {
         USER_NOTFIND(203,"非法用户"),
         USER_NO(204,"没有相关权限"),
         ROOM_NOTFIND_MOVE(205,"房间不存在或已偏离位置"),
+        ROOM_EXITS(206,"房间名已存在,请更换重试"),
 
     }
 
@@ -91,39 +92,24 @@ class IMChatRoomController {
     }
 
     @PostMapping("/creatroom")
-    fun insert(@RequestParam("name") name:String, @RequestParam("roomname") roomname:String,@RequestParam("latitude") latitude:Double,@RequestParam("longitude") longitude:Double,@RequestParam("type") type:Int): BaseHttpResponse<Boolean> {
+    fun insert(@RequestParam("name") name:String, @RequestParam("roomname") roomname:String,@RequestParam("latitude") latitude:Double,@RequestParam("longitude") longitude:Double,@RequestParam("type") type:Int): BaseHttpResponse<IMChatRoom> {
 
-        var baseR=BaseHttpResponse<Boolean>()
+        var baseR=BaseHttpResponse<IMChatRoom>()
 
         //检测用户合法性
         var user = userService.findByKey("name",name)
 
         if (user != null){
 
-            when (type) {
-                //附近
-                1 -> {
-                    var imChatRoom = IMChatRoom(
-                            null,
-                            roomname,
-                            name.plus(System.currentTimeMillis()),
-                            type,
-                            name,
-                            "",
-                            latitude,
-                            longitude,
-                            System.currentTimeMillis(),
-                            System.currentTimeMillis(),
-                            true
-                            )
-                    baseR.data = true
+            //检查是否有房间名重名的
+            var room = imChatRoomService.getRoomOne(roomname,0.0,0.0,false)
 
-                    imChatRoomService.insert(imChatRoom)
-                }
-                //公共
-                2 -> {
 
-                    if (name == "lwt520"){
+            if (room == null){
+
+                when (type) {
+                    //附近
+                    1 -> {
                         var imChatRoom = IMChatRoom(
                                 null,
                                 roomname,
@@ -137,25 +123,50 @@ class IMChatRoomController {
                                 System.currentTimeMillis(),
                                 true
                         )
-                        baseR.data = true
+                        baseR.data = imChatRoom
+
                         imChatRoomService.insert(imChatRoom)
-                    }else{
-
-                        baseR.code = IMChatErr.USER_NO.code
-                        baseR.message = IMChatErr.USER_NO.message
-                        baseR.data = false
                     }
+                    //公共
+                    2 -> {
 
+                        if (name == "lwt520"){
+                            var imChatRoom = IMChatRoom(
+                                    null,
+                                    roomname,
+                                    name.plus(System.currentTimeMillis()),
+                                    type,
+                                    name,
+                                    "",
+                                    latitude,
+                                    longitude,
+                                    System.currentTimeMillis(),
+                                    System.currentTimeMillis(),
+                                    true
+                            )
+                            baseR.data = imChatRoom
+                            imChatRoomService.insert(imChatRoom)
+                        }else{
+
+                            baseR.code = IMChatErr.USER_NO.code
+                            baseR.message = IMChatErr.USER_NO.message
+
+                        }
+
+                    }
                 }
+            }else{
+
+                baseR.code = IMChatErr.ROOM_EXITS.code
+                baseR.message = IMChatErr.ROOM_EXITS.message
+
             }
-
-
 
         }else{
 
             baseR.code = IMChatErr.USER_NOTFIND.code
             baseR.message = IMChatErr.USER_NOTFIND.message
-            baseR.data = false
+
         }
 
         return baseR
@@ -176,7 +187,7 @@ class IMChatRoomController {
                 //附近
                 1 -> {
 
-                    baseR.data =  imChatRoomService.getRoomOne(roomname,latitude,longitude) != null
+                    baseR.data =  imChatRoomService.getRoomOne(roomname,latitude,longitude,true) != null
 
                     if (!baseR.data!!){
                         baseR.code = IMChatErr.ROOM_NOTFIND_MOVE.code

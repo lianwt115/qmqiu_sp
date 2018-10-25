@@ -44,8 +44,8 @@ class IMChatRoomService:BaseDaoInterface<IMChatRoom> , IMChatRoomDaoInterface<IM
         return imChatRoomDao.getRoom(type,latitude,longitude)
     }
 
-    override fun getRoomOne(roomName: String, latitude: Double, longitude: Double): IMChatRoom? {
-        return imChatRoomDao.getRoomOne(roomName,latitude,longitude)
+    override fun getRoomOne(roomName: String, latitude: Double, longitude: Double, check: Boolean): IMChatRoom? {
+        return imChatRoomDao.getRoomOne(roomName,latitude,longitude,check)
     }
 
 }
