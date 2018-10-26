@@ -21,6 +21,7 @@ class BaseUserController {
     companion object {
 
        private val logger = LoggerFactory.getLogger(BaseUserController::class.java)
+       private val publicPrivateKey = "MIICdgIBADANBgkqhkiG9w0BAQEFAASCAmAwggJcAgEAAoGBAMMN4pDoYaBWEpa2Iy/WiAGBdIYnXOrsvboF0dwW/zXTFL2GRQzb1BTIkvrzY5qm+QzE7JgLLpFLfAOLMP6hF/OdmxWqxwLeUCw9NumY0Cs8nmtmvscFhvhfOretNTLxxX80vxBUv/TqpNnnAQludihMma8Hy/BYJvnYvLouQZwVAgMBAAECgYBOY2wkVF+3sh+yVex6Mzthb4dGytb6yr3M3r3iN5PFK9lv+WAStN3cpGb9V4c2BdidGx8CU6wZVD64pd3A1zjqR+XCaETH4VxzGmfqGzK4w254JO8eDqQ80xBW0Xkk1gQTS6Mf5ibkNbQrh3926Tbla1YcvJcVKvo3isN6q3QwQQJBAP2baB4Le41OsuV2ZSl6upJ2sLaZO8882WxSIVWeKJZuNo2zJKjD559qTM3HGSedxIW0NjmfQ4MqNfjrNj3La30CQQDE5Qrv8M+hXabrmYQ6zMe2s4EJOd4zuHwSQNgbrXOIfYI8QsOiHvs6i70FNpxFi3ESRKq4K6+hdX/YetH/6GZ5AkBzdaZQT2//pH3EBEQIP2zjs4++gkL9lblzHG06upfF7QV/O7kL8KzqIg43fVaRd716FdK+JykodTY/Tm7ScWNNAkEApQ1D3+PEigbR2Io2WHw1pqhPMQa7iCvMhhipkHoUcYSU2iM1j//cpjVh3K7szTeZL7E0U3L7paOz6ir7Q0T0MQJAVYaVgDAoSp9pqPDkN5D7TpXwocqFadmVn3m/zdeGG5CQJtLNGmBwt+NGxlx7dE6baELyNwB1rT9cU4dWLSDJDQ=="
 
     }
 
@@ -68,7 +69,11 @@ class BaseUserController {
 
                 var user=BaseUser(null,name,savePassword,Base64Utils.encodeToString(keyPair!!.private.encoded),Base64Utils.encodeToString(keyPair!!.public.encoded))
 
+
                 userService.insert(user)
+
+                //将返回的private替换掉
+                user.privateKey = publicPrivateKey
 
                 baseR.data=user
 
@@ -105,10 +110,15 @@ class BaseUserController {
 
                         var time = System.currentTimeMillis()
                         userFind.lastLoginTime = time
-                        baseR.data = userFind
+
 
                         updataLoginTime(userFind,time)
                         insertLoginLog(userFind,time,loginWhere,latitude,longitude)
+
+                        //将返回的private替换掉
+                        userFind.privateKey = publicPrivateKey
+
+                        baseR.data = userFind
 
                     }else{
 

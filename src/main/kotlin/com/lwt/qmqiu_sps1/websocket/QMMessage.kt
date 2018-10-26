@@ -1,5 +1,18 @@
 package com.lwt.qmqiu_sps1.websocket
 
-data class QMMessage(var from:String,var to:String,var type:Int,var message:String,var time:Long = System.currentTimeMillis()) {
+import org.springframework.data.annotation.Id
+import org.springframework.data.mongodb.core.mapping.Document
+
+@Document(collection = "message_log")
+data class QMMessage(
+        @Id
+        var _id:String?=null,
+
+        var from:String,
+        var to:String,
+        var type:Int,
+        var message:String,
+        var currentCount:Int,
+        var time:Long = System.currentTimeMillis()) {
 
 }

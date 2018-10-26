@@ -1,6 +1,7 @@
 package com.lwt.qmqiu_sps1.controller
 
 
+import com.google.gson.Gson
 import com.lwt.qmqiu_sps1.bean.BaseHttpResponse
 import com.lwt.qmqiu_sps1.bean.BaseUser
 import com.lwt.qmqiu_sps1.bean.IMChatRoom
@@ -9,6 +10,8 @@ import com.lwt.qmqiu_sps1.service.BaseUserService
 import com.lwt.qmqiu_sps1.service.IMChatRoomService
 import com.lwt.qmqiu_sps1.service.LoginLogService
 import com.lwt.qmqiu_sps1.utils.RSAUtils
+import com.lwt.qmqiu_sps1.websocket.QMMessage
+import com.lwt.qmqiu_sps1.websocket.QMWebSocket
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.scheduling.annotation.Async
@@ -34,6 +37,7 @@ class IMChatRoomController {
         USER_NO(204,"没有相关权限"),
         ROOM_NOTFIND_MOVE(205,"房间不存在或已偏离位置"),
         ROOM_EXITS(206,"房间名已存在,请更换重试"),
+        ROOM_FLY(207,"定位不在地球上"),
 
     }
 
@@ -110,22 +114,38 @@ class IMChatRoomController {
                 when (type) {
                     //附近
                     1 -> {
-                        var imChatRoom = IMChatRoom(
-                                null,
-                                roomname,
-                                name.plus(System.currentTimeMillis()),
-                                type,
-                                name,
-                                "",
-                                latitude,
-                                longitude,
-                                System.currentTimeMillis(),
-                                System.currentTimeMillis(),
-                                true
-                        )
-                        baseR.data = imChatRoom
+                        //附近对经纬度做判断
 
-                        imChatRoomService.insert(imChatRoom)
+                        if ((0<latitude && latitude<90) &&  (0<longitude && longitude<180)){
+
+                            var imChatRoom = IMChatRoom(
+                                    null,
+                                    0,
+                                    roomname,
+                                    name.plus(System.currentTimeMillis()),
+                                    type,
+                                    name,
+                                    "",
+                                    latitude,
+                                    longitude,
+                                    System.currentTimeMillis(),
+                                    System.currentTimeMillis(),
+                                    true
+                            )
+                            baseR.data = imChatRoom
+
+                            imChatRoomService.insert(imChatRoom)
+
+
+                        }else{
+
+                            baseR.code = IMChatErr.ROOM_FLY.code
+                            baseR.message = IMChatErr.ROOM_FLY.message
+
+
+                        }
+
+
                     }
                     //公共
                     2 -> {
@@ -133,6 +153,7 @@ class IMChatRoomController {
                         if (name == "lwt520"){
                             var imChatRoom = IMChatRoom(
                                     null,
+                                    0,
                                     roomname,
                                     name.plus(System.currentTimeMillis()),
                                     type,
@@ -172,56 +193,76 @@ class IMChatRoomController {
         return baseR
     }
 
-    @PostMapping("/enterroom")
-    fun enterRoom(@RequestParam("name") name:String,@RequestParam("roomname") roomname:String, @RequestParam("latitude") latitude:Double,@RequestParam("longitude") longitude:Double,@RequestParam("type") type:Int): BaseHttpResponse<Boolean> {
+
+    @PostMapping("/updata")
+    fun enterRoom(@RequestParam("roomNumber") roomNumber:String,@RequestParam("currentCount") currentCount:Int, @RequestParam("lastContent") lastContent:String,@RequestParam("lastContentTime") lastContentTime:Long,@RequestParam("type") type:Int=1): BaseHttpResponse<Boolean> {
 
         var baseR= BaseHttpResponse<Boolean>()
 
-        //检测用户合法性
-        var user = userService.findByKey("name",name)
+        var hash = HashMap<String,Any>()
 
-        if (user != null){
+        when (type) {
 
-            when (type) {
-
-                //附近
-                1 -> {
-
-                    baseR.data =  imChatRoomService.getRoomOne(roomname,latitude,longitude,true) != null
-
-                    if (!baseR.data!!){
-                        baseR.code = IMChatErr.ROOM_NOTFIND_MOVE.code
-                        baseR.message = IMChatErr.ROOM_NOTFIND_MOVE.message
-                    }
-
-                }
-
-                //公共
-                2 -> {
-
-                    baseR.data = imChatRoomService.findByKey("roomname",roomname) != null
-
-                    if (!baseR.data!!){
-                        baseR.code = IMChatErr.ROOM_NOTFIND.code
-                        baseR.message = IMChatErr.ROOM_NOTFIND.message
-                    }
-                }
-
-                //我的
-                3 -> {
-
-                }
+            1 -> {
+                hash["currentCount"] = currentCount
             }
-        }else{
+            2 -> {
+                //加密信息
+                hash["lastContent"] = Base64Utils.encodeToString( RSAUtils.encryptData(lastContent.toByteArray(),RSAUtils.publucKey)!!)
+                hash["lastContentTime"] = lastContentTime
+            }
+            else -> {
+                hash["currentCount"] = currentCount
+                hash["lastContent"] = Base64Utils.encodeToString( RSAUtils.encryptData(lastContent.toByteArray(),RSAUtils.publucKey)!!)
+                hash["lastContentTime"] = lastContentTime
+            }
+        }
 
-            baseR.code = IMChatErr.USER_NOTFIND.code
-            baseR.message = IMChatErr.USER_NOTFIND.message
 
+
+        when (imChatRoomService.updata(roomNumber,hash).modifiedCount) {
+
+            0L -> {
+                baseR.data = false
+            }
+
+            else -> {
+                baseR.data = true
+            }
         }
 
         return baseR
     }
 
+    @GetMapping("/check")
+    fun checkRoom(@RequestParam("roomNumber") roomNumber:String): BaseHttpResponse<Boolean> {
+
+        var baseR= BaseHttpResponse<Boolean>()
+
+        baseR.data = imChatRoomService.findByKey("roomNumber",roomNumber) !=null
+
+
+        return baseR
+    }
+
+
+    //测试通过可以发全局通知
+    @GetMapping("/test")
+    fun test(): BaseHttpResponse<Boolean> {
+
+        var list = QMWebSocket.getWebSocketSet()["notification"]
+
+        var message =QMMessage(null,"系统","notification",2,"测试一波",list?.size?:0)
+
+        list?.forEach {
+
+            it.sendMessage(Gson().toJson(message))
+        }
+
+        var baseR= BaseHttpResponse<Boolean>()
+        baseR.data = true
+        return baseR
+    }
 
 
 }

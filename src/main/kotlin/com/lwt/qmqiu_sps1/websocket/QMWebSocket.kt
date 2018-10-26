@@ -11,11 +11,13 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
+import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
 import javax.websocket.server.ServerEndpoint
 import java.io.IOException
 import java.lang.Exception
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentSkipListSet
 import javax.websocket.OnMessage
 import javax.websocket.OnClose
 import javax.websocket.OnOpen
@@ -24,7 +26,7 @@ import javax.websocket.OnError
 import javax.websocket.server.PathParam
 
 
-@ServerEndpoint(value = "/websocket/{name}")
+@ServerEndpoint(value = "/websocket/{number}")
 @Component
 class QMWebSocket {
 
@@ -37,12 +39,16 @@ class QMWebSocket {
         private var onlineCount = 0
 
         //concurrent包的线程安全Set，用来存放每个客户端对应的MyWebSocket对象。
-        private val webSocketSet = ConcurrentHashMap<String,QMWebSocket>()
+        private val webSocketSet = ConcurrentHashMap<String,ArrayList<QMWebSocket>>()
 
-        private val idNameSet = ConcurrentHashMap<String,Session>()
+        private val idWSSet = ConcurrentHashMap<Session,QMWebSocket>()
+        private val idNameSet = ConcurrentHashMap<Session,String>()
 
         private val logger = LoggerFactory.getLogger(QMWebSocket::class.java)
 
+        fun getWebSocketSet(): ConcurrentHashMap<String, ArrayList<QMWebSocket>> {
+            return webSocketSet
+        }
     }
 
     //与某个客户端的连接会话，需要通过它来给客户端发送数据
@@ -51,29 +57,42 @@ class QMWebSocket {
     /**
      * 连接建立成功调用的方法 */
     @OnOpen
-    fun onOpen(@PathParam(value = "name") name:String, session: Session) {
+    fun onOpen(@PathParam(value = "number") number:String, session: Session) {
         this.session = session
 
-        when (userExist(name)) {
+        //验证房间号存不存在
 
-            true -> {
-                //二次登陆
-                if (idNameSet.keys.contains(name)) {
-                    //将上一次连接关闭
-                    idNameSet[name]?.close()
-                }
-                logger.info(name.plus("连接了"))
-                webSocketSet[name] = this     //加入set中
-                idNameSet[name] = session     //加入set中
-                addOnlineCount()           //在线数加1
-                logger.info("有新连接加入！当前在线人数为:${getOnlineCount()}")
+        if (number == "notification" || roomExist(number)){
+            logger.info(number.plus("连接了"))
+
+            if (webSocketSet.keys.contains(number)){
+
+                webSocketSet[number]!!.add(this@QMWebSocket)
+
+            }else{
+
+                var list =  ArrayList<QMWebSocket>()
+
+                list.add(this@QMWebSocket)
+
+                webSocketSet[number] = list
 
             }
 
-            false -> {
-                logger.info("非法连接:$name")
-                this.session?.close()
-            }
+            idWSSet[this.session!!] = this
+            idNameSet[this.session!!] = number
+            //总在线数加1
+            addOnlineCount()
+
+            logger.info("有新连接加入！当前在线人数为:${getOnlineCount()}")
+
+            //只更新房间人数
+            updataRoom(number,webSocketSet[number]!!.size,1)
+
+        }else{
+
+            logger.info("非法连接:$number")
+            this.session?.close()
 
         }
 
@@ -85,15 +104,33 @@ class QMWebSocket {
     @OnClose
     fun onClose() {
 
-        //删除集合
-        var key = getKeyFromValue()
 
-        if (idNameSet.keys.contains(key))
-            idNameSet.remove(key)
-        if (webSocketSet.keys.contains(key))
-            webSocketSet.remove(key)
+        try {
 
-        subOnlineCount()
+            var name =idNameSet[this.session]
+
+            if (name != null && webSocketSet.keys.contains(name)){
+
+                var list =webSocketSet[name]
+
+                list?.remove(idWSSet[this.session])
+
+                //只更新房间人数
+                updataRoom(name!!,webSocketSet[name]!!.size,1)
+            }
+
+            idWSSet.remove(this.session)
+
+            //总在线减1
+            subOnlineCount()
+
+        }catch (e:Exception){
+
+            logger.info("onClose(:${e.message}")
+
+        }
+
+
     }
 
     /**
@@ -104,6 +141,7 @@ class QMWebSocket {
     @OnMessage
     fun onMessage(message: String, session: Session) {
 
+
         try {
 
             var gson = Gson()
@@ -112,20 +150,19 @@ class QMWebSocket {
 
             qmMessage.time = System.currentTimeMillis()
 
+            //当前房间数
+            qmMessage.currentCount = webSocketSet[qmMessage.to]?.size?:23
+
             logger.info("来自客户端的消息(name:${qmMessage.from}):$message")
 
-            if (qmMessage.to == "public"){
+            //更新最后一条信息和时间
+            updataRoom(qmMessage.to,0,2,qmMessage.time,qmMessage.message)
 
-                sendToPublic(gson.toJson(qmMessage))
-
-            }else{
-                sendToPrivate(gson.toJson(qmMessage),qmMessage.to)
-            }
-
+            sendToPrivate(gson.toJson(qmMessage),qmMessage.to)
 
         }catch (e:Exception){
 
-            logger.info("消息不合法(id:${idNameSet[session.id]}):$message")
+            logger.info("消息不合法(id:${idNameSet[session]}):$message")
 
         }
 
@@ -141,34 +178,31 @@ class QMWebSocket {
 
     @Throws(IOException::class)
     fun sendMessage(message: String) {
-        logger.info("发送给客户端的消息(name:${getKeyFromValue()}):$message")
+
         //this.session?.basicRemote?.sendText(message)
         this.session?.asyncRemote?.sendText(message)
     }
 
 
     /**
-     * 发送1-1(点对点发送)
+     * 发送1-1(点对点发送)  是一对多的特例
      */
     @Throws(IOException::class)
     fun sendToPrivate(message: String,name:String) {
 
-        if (webSocketSet.containsKey(name))
-            webSocketSet[name]?.sendMessage(message)
+        //name为房间number
 
-    }
-    /**
-     * 发送1-n(1对多发送)  同一个房间
-     */
-    @Throws(IOException::class)
-    fun sendToPublic(message: String) {
+        webSocketSet[name]?.forEach {
 
-        webSocketSet.forEach { t: String, u: QMWebSocket ->
+            it.sendMessage(message)
 
-            u.sendMessage(message)
         }
 
+        //加密后速度有点慢  需异步执行
+        storeMessage(message)
+
     }
+
 
     @Synchronized
     fun getOnlineCount(): Int {
@@ -185,36 +219,61 @@ class QMWebSocket {
         QMWebSocket.onlineCount--
     }
 
-    fun userExist(name: String): Boolean? {
+    private fun roomExist(roomNumber: String): Boolean {
 
         var hashMap = HashMap<String,String>()
 
-        hashMap["name"] = name
+        hashMap["roomNumber"] = roomNumber
 
-        var response = OkHttpUtil.get(baseUrl.plus("user/findByName"),hashMap)
+        var response = OkHttpUtil.get(baseUrl.plus("chat/check"),hashMap)
 
         var gson = Gson()
 
         var boolean = gson.fromJson<BaseHttpResponse<Boolean>>(response,BaseHttpResponse::class.java)
 
-        return boolean.data
+        return boolean.data!!
 
     }
 
-    fun getKeyFromValue():String{
 
-        var keyLocal = ""
-        idNameSet.forEach { key: String, value: Session ->
+    private fun storeMessage(message: String) {
 
-            if (value == this.session){
-                keyLocal = key
-            }
-                return@forEach
+        var hashMap = HashMap<String,String>()
 
-        }
+        hashMap["name"] = "sys"
+        hashMap["message"] = message
 
-        return  keyLocal
+        var response = OkHttpUtil.post(baseUrl.plus("message/insert"),hashMap)
+
+        var gson = Gson()
+
+        var boolean = gson.fromJson<BaseHttpResponse<Boolean>>(response,BaseHttpResponse::class.java)
+
+        logger.error("消息插入:${boolean.data}")
 
     }
+
+    //更新房间信息
+    private fun updataRoom(roomNumber: String,count:Int=0,type:Int = 1,lastTime:Long=0,lastContent:String = ""){
+
+        var hashMap = HashMap<String,String>()
+
+        hashMap["roomNumber"] = roomNumber
+        hashMap["currentCount"] = count.toString()
+        hashMap["lastContent"] = lastContent
+        hashMap["lastContentTime"] = lastTime.toString()
+        hashMap["type"] = type.toString()
+
+        var response = OkHttpUtil.post(baseUrl.plus("chat/updata"),hashMap)
+
+        var gson = Gson()
+
+        var boolean = gson.fromJson<BaseHttpResponse<Boolean>>(response,BaseHttpResponse::class.java)
+
+        logger.error("${roomNumber}房间信息更新:${boolean.data}")
+
+    }
+
+
 
 }

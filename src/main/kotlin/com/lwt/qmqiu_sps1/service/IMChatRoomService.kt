@@ -31,9 +31,9 @@ class IMChatRoomService:BaseDaoInterface<IMChatRoom> , IMChatRoomDaoInterface<IM
         return imChatRoomDao.findByKey(key,value)
     }
 
-    override fun updata(_id: String, data: HashMap<String, Any>): UpdateResult {
+    override fun updata(roomName: String, data: HashMap<String, Any>): UpdateResult {
 
-        return imChatRoomDao.updata(_id,data)
+        return imChatRoomDao.updata(roomName,data)
     }
 
     override fun delete(_id: String): DeleteResult {

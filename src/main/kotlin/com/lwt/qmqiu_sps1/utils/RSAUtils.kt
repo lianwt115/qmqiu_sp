@@ -14,6 +14,12 @@ class RSAUtils {
 
     companion object {
 
+         val publucKeyString = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDDDeKQ6GGgVhKWtiMv1ogBgXSGJ1zq7L26BdHcFv810xS9hkUM29QUyJL682OapvkMxOyYCy6RS3wDizD+oRfznZsVqscC3lAsPTbpmNArPJ5rZr7HBYb4Xzq3rTUy8cV/NL8QVL/06qTZ5wEJbnYoTJmvB8vwWCb52Ly6LkGcFQIDAQAB"
+
+         val publucKey = RSAUtils.loadPublicKey(publucKeyString)
+
+
+
         private  val  RSA = "RSA"
 
         /**

@@ -31,8 +31,16 @@ class IMChatRoomDao: BaseDaoInterface<IMChatRoom>,IMChatRoomDaoInterface<IMChatR
 
         query.addCriteria(Criteria.where("status").`is`(true))
 
+        var list = mongoTemplate.find(query,IMChatRoom::class.java)
 
-        return mongoTemplate.find(query,IMChatRoom::class.java)
+        if (list?.size >20){
+
+            list.shuffle()
+
+            list= list.subList(0,20)
+        }
+
+        return list
     }
 
     override fun getRoom(type: Int, latitude: Double, longitude: Double): List<IMChatRoom> {
@@ -41,9 +49,9 @@ class IMChatRoomDao: BaseDaoInterface<IMChatRoom>,IMChatRoomDaoInterface<IMChatR
 
         query.addCriteria(Criteria.where("status").`is`(true))
 
-        query.addCriteria(Criteria.where("latitude").gte(latitude-0.0001).lte(latitude+0.0001))
+        query.addCriteria(Criteria.where("latitude").gte(latitude-0.006).lte(latitude+0.006))
 
-        query.addCriteria(Criteria.where("longitude").gte(longitude-0.0001).lte(longitude+0.0001))
+        query.addCriteria(Criteria.where("longitude").gte(longitude-0.0025).lte(longitude+0.0025))
 
         return mongoTemplate.find(query,IMChatRoom::class.java)
     }
@@ -55,9 +63,9 @@ class IMChatRoomDao: BaseDaoInterface<IMChatRoom>,IMChatRoomDaoInterface<IMChatR
         query.addCriteria(Criteria.where("status").`is`(true))
 
         if (check) {
-            query.addCriteria(Criteria.where("latitude").gte(latitude-0.0001).lte(latitude+0.0001))
+            query.addCriteria(Criteria.where("latitude").gte(latitude-0.006).lte(latitude+0.006))
 
-            query.addCriteria(Criteria.where("longitude").gte(longitude-0.0001).lte(longitude+0.0001))
+            query.addCriteria(Criteria.where("longitude").gte(longitude-0.0025).lte(longitude+0.0025))
         }
 
 
@@ -76,9 +84,9 @@ class IMChatRoomDao: BaseDaoInterface<IMChatRoom>,IMChatRoomDaoInterface<IMChatR
         return mongoTemplate.findOne(query,IMChatRoom::class.java)
     }
 
-    override fun updata(_id: String, data: HashMap<String, Any>): UpdateResult {
+    override fun updata(roomNumber: String, data: HashMap<String, Any>): UpdateResult {
 
-        val criteria = Criteria.where("_id").`is`(_id)
+        val criteria = Criteria.where("roomNumber").`is`(roomNumber)
         val query = Query(criteria)
 
         var update :Update?=null

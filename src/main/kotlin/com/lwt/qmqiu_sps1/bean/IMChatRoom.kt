@@ -9,6 +9,7 @@ data class IMChatRoom(
         @Id
         var _id:String?=null,
 
+        var currentCount:Int = 0,
         var roomName:String="",
         var roomNumber:String="",
         var roomType:Int= 0,
