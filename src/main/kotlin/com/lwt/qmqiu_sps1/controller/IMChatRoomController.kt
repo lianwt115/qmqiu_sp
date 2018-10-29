@@ -2,18 +2,18 @@ package com.lwt.qmqiu_sps1.controller
 
 
 import com.google.gson.Gson
-import com.lwt.qmqiu_sps1.bean.BaseHttpResponse
-import com.lwt.qmqiu_sps1.bean.BaseUser
-import com.lwt.qmqiu_sps1.bean.IMChatRoom
-import com.lwt.qmqiu_sps1.bean.LoginLog
+import com.lwt.qmqiu_sps1.bean.*
 import com.lwt.qmqiu_sps1.service.BaseUserService
+import com.lwt.qmqiu_sps1.service.EnterRoomLogService
 import com.lwt.qmqiu_sps1.service.IMChatRoomService
 import com.lwt.qmqiu_sps1.service.LoginLogService
+import com.lwt.qmqiu_sps1.utils.OkHttpUtil
 import com.lwt.qmqiu_sps1.utils.RSAUtils
 import com.lwt.qmqiu_sps1.websocket.QMMessage
 import com.lwt.qmqiu_sps1.websocket.QMWebSocket
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.scheduling.annotation.Async
 import org.springframework.util.Base64Utils
 import org.springframework.web.bind.annotation.*
@@ -26,7 +26,7 @@ class IMChatRoomController {
     companion object {
 
        private val logger = LoggerFactory.getLogger(IMChatRoomController::class.java)
-
+       private val baseUrl = "http://localhost:9898/api/"
     }
 
     enum class IMChatErr(var code:Int,var message:String){
@@ -46,6 +46,9 @@ class IMChatRoomController {
 
     @Autowired
     private lateinit var userService: BaseUserService
+
+    @Autowired
+    private lateinit var enterRoomLogService: EnterRoomLogService
 
     @GetMapping("/getroom")
     fun getAllRoom(@RequestParam("name") name:String, @RequestParam("latitude") latitude:Double,@RequestParam("longitude") longitude:Double,@RequestParam("type") type:Int): BaseHttpResponse<List<IMChatRoom>> {
@@ -79,6 +82,42 @@ class IMChatRoomController {
                 //我的
                 3 -> {
 
+                    //先查出参与了那些聊天
+
+                    var data = enterRoomLogService.getAll("name",name)
+
+                    if (data.isNotEmpty()){
+
+                        var list = ArrayList<IMChatRoom>()
+
+                        data.forEach { log ->
+
+                            var room = imChatRoomService.getRoomOne("roomNumber",log.roomNumber!!,0.0,0.0,false)
+
+                            //公共的给 ,附近的校验一波
+                            when (room?.roomType) {
+
+                                1 -> {
+
+                                    if (latitude-0.006 <room.latitude && latitude+0.006 >room.latitude &&  longitude-0.0025 <room.longitude && longitude+0.0025 >room.longitude)
+                                        if (room != null)
+                                            list.add(room)
+
+                                }
+
+                                2 -> {
+
+                                    if (room != null)
+                                        list.add(room)
+                                }
+                            }
+
+
+                        }
+
+                        baseR.data = list
+                    }
+
                 }
             }
         }else{
@@ -106,7 +145,7 @@ class IMChatRoomController {
         if (user != null){
 
             //检查是否有房间名重名的
-            var room = imChatRoomService.getRoomOne(roomname,0.0,0.0,false)
+            var room = imChatRoomService.getRoomOne("roomName",roomname,0.0,0.0,false)
 
 
             if (room == null){

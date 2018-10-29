@@ -56,9 +56,9 @@ class IMChatRoomDao: BaseDaoInterface<IMChatRoom>,IMChatRoomDaoInterface<IMChatR
         return mongoTemplate.find(query,IMChatRoom::class.java)
     }
 
-    override fun getRoomOne(roomName: String, latitude: Double, longitude: Double, check: Boolean): IMChatRoom? {
+    override fun getRoomOne(key: String, value: Any, latitude: Double, longitude: Double, check: Boolean): IMChatRoom? {
 
-        var query = Query(Criteria.where("roomName").`is`(roomName))
+        var query = Query(Criteria.where(key).`is`(value))
 
         query.addCriteria(Criteria.where("status").`is`(true))
 

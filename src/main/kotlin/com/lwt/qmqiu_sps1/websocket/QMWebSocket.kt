@@ -42,6 +42,7 @@ class QMWebSocket {
         private val webSocketSet = ConcurrentHashMap<String,ArrayList<QMWebSocket>>()
 
         private val idWSSet = ConcurrentHashMap<Session,QMWebSocket>()
+
         private val idNameSet = ConcurrentHashMap<Session,String>()
 
         private val logger = LoggerFactory.getLogger(QMWebSocket::class.java)
@@ -141,7 +142,6 @@ class QMWebSocket {
     @OnMessage
     fun onMessage(message: String, session: Session) {
 
-
         try {
 
             var gson = Gson()
@@ -157,6 +157,9 @@ class QMWebSocket {
 
             //更新最后一条信息和时间
             updataRoom(qmMessage.to,0,2,qmMessage.time,qmMessage.message)
+
+            //更新房间绑定
+            insertEnterRoomLog(qmMessage.from,qmMessage.to)
 
             sendToPrivate(gson.toJson(qmMessage),qmMessage.to)
 
@@ -271,6 +274,22 @@ class QMWebSocket {
         var boolean = gson.fromJson<BaseHttpResponse<Boolean>>(response,BaseHttpResponse::class.java)
 
         logger.error("${roomNumber}房间信息更新:${boolean.data}")
+
+    }
+
+    private fun insertEnterRoomLog(name: String,roomNumber: String){
+        var hashMap = HashMap<String,String>()
+
+        hashMap["name"] = name
+        hashMap["roomNumber"] = roomNumber
+
+        var response = OkHttpUtil.post(baseUrl.plus("enterlog/insertLog"),hashMap)
+
+        var gson = Gson()
+
+        var boolean = gson.fromJson<BaseHttpResponse<Boolean>>(response,BaseHttpResponse::class.java)
+
+        logger.error("${roomNumber}房间绑定:${boolean.data}")
 
     }
 

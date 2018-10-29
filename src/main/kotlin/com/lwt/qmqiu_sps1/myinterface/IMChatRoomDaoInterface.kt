@@ -7,7 +7,7 @@ import com.lwt.qmqiu_sps1.bean.IMChatRoom
 interface IMChatRoomDaoInterface<T> {
 
     fun getRoom(type:Int,latitude:Double,longitude:Double):List<IMChatRoom>
-    fun getRoomOne(roomName:String,latitude:Double,longitude:Double,check:Boolean):IMChatRoom?
+    fun getRoomOne(key:String,value:Any,latitude:Double,longitude:Double,check:Boolean):IMChatRoom?
 
 
 }
