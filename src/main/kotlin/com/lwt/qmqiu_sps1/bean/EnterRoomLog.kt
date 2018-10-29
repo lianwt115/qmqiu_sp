@@ -12,6 +12,9 @@ data class EnterRoomLog(
 
         var roomNumber:String?="",
 
+        //活跃度使用
+        var messageCount:Int? = 0,
+
         var enterTime:Long = System.currentTimeMillis()
 
 

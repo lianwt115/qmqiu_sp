@@ -39,6 +39,7 @@ class EnterRoomLogDao: BaseDaoInterface<EnterRoomLog> {
         if (enterlog !=null){
             var hash =HashMap<String,Any>()
             hash["enterTime"] = log.enterTime
+            hash["messageCount"] = log.messageCount!!+1
 
             updata(enterlog._id!!,hash)
 

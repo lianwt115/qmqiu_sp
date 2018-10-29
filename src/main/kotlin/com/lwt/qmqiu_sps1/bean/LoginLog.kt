@@ -16,7 +16,15 @@ data class LoginLog(
         //登录时的经度
         var longitude:Double?=0.0,
         //登录时间
-        var loginTime:Long = System.currentTimeMillis()
+        var loginTime:Long = System.currentTimeMillis() ,
+
+        var loginOutWhere:String?="",
+        //登录时的纬度
+        var latitudeOut:Double?=0.0,
+        //登录时的经度
+        var longitudeOut:Double?=0.0,
+        //登录时间
+        var loginOutTime:Long = System.currentTimeMillis()
 
 
 )

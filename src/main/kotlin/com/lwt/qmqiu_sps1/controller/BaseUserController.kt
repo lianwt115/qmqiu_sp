@@ -149,7 +149,7 @@ class BaseUserController {
                         userFind.lastLoginTime = time
 
 
-                        updataLoginTime(userFind,time)
+                        updataLoginTime(userFind,time,true)
                         insertLoginLog(userFind,time,loginWhere,latitude,longitude)
 
                         //将返回的private替换掉
@@ -168,6 +168,51 @@ class BaseUserController {
         }
 
         logger.info("path:/login  name:$name success:${baseR.data != null}")
+
+        return baseR
+    }
+
+    @PostMapping("/loginout")
+    fun loginOut(@RequestParam("name") name:String, @RequestParam("password") password:String,@RequestParam("auto") auto:Boolean,@RequestParam("loginWhere") loginWhere:String,@RequestParam("latitude") latitude:Double,@RequestParam("longitude") longitude:Double): BaseHttpResponse<Boolean> {
+
+        var baseR=BaseHttpResponse<Boolean>()
+
+        var userFind = userService.findByKey("name",name)
+
+        when (userFind == null) {
+
+            true -> {
+
+                baseR.code = BaseUserErr.USER_NOTFIND.code
+                baseR.message = BaseUserErr.USER_NOTFIND.message
+            }
+
+            false -> {
+
+                    //如果是自动登录,就验证密文,手动登录就将密文解密为明文对比
+
+                    var  savePassword = if (auto)userFind!!.password!! else String(RSAUtils.decryptData(Base64Utils.decodeFromString(userFind!!.password!!),RSAUtils.loadPrivateKey(userFind!!.privateKey!!))!!)
+
+                    if (savePassword  == password){
+
+                        var time = System.currentTimeMillis()
+
+                        //更新登出时间
+                        updataLoginTime(userFind,time,false)
+
+                        baseR.data = true
+
+                    }else{
+
+                        baseR.code = BaseUserErr.USER_PASSWORDERR.code
+                        baseR.message = BaseUserErr.USER_PASSWORDERR.message
+
+                    }
+
+            }
+        }
+
+        logger.info("path:/loginout  name:$name success:${baseR.data == true}")
 
         return baseR
     }
@@ -252,12 +297,14 @@ class BaseUserController {
     }
 
     @Async
-    fun updataLoginTime(baseUser: BaseUser, time: Long){
+    fun updataLoginTime(baseUser: BaseUser, time: Long,status:Boolean){
 
         //更新最近一次更新时间
         var updata =HashMap<String,Any>()
 
-        updata["lastLoginTime"] = time
+
+        updata[if (status)"lastLoginTime" else "lastLoginOutTime"] = time
+        updata["status"] = status
 
         logger.info("path:/login(更新登录时间)  name:${baseUser.name} success:${userService.updata(baseUser._id!!,updata).modifiedCount > 0}")
 

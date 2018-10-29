@@ -13,7 +13,9 @@ data class BaseUser(
         var colorIndex:Int? = 10,
         var privateKey: String?="",
         var publicKey: String?="",
+        var status: Boolean?=true,
         var lastLoginTime:Long = System.currentTimeMillis(),
+        var lastLoginOutTime:Long = System.currentTimeMillis(),
         var creatTime:Long? = System.currentTimeMillis()
 
 )

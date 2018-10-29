@@ -63,7 +63,7 @@ class EnterRoomLogController {
             if (room != null){
 
 
-                enterRoomLogService.insert(EnterRoomLog(null,name,roomNumber,System.currentTimeMillis()))
+                enterRoomLogService.insert(EnterRoomLog(null,name,roomNumber,1,System.currentTimeMillis()))
 
                 baseR.data = true
 
