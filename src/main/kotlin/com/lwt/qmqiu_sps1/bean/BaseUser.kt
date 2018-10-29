@@ -9,6 +9,8 @@ data class BaseUser(
         var _id:String?=null,
         var name:String? ="lwt",
         var password:String? ="***",
+        var imgPath:String? ="***",
+        var colorIndex:Int? = 10,
         var privateKey: String?="",
         var publicKey: String?="",
         var lastLoginTime:Long = System.currentTimeMillis(),

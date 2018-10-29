@@ -11,6 +11,8 @@ data class QMMessage(
         var from:String,
         var to:String,
         var type:Int,
+        var colorIndex:Int,
+        var imgPath:String,
         var message:String,
         var currentCount:Int,
         var time:Long = System.currentTimeMillis()) {

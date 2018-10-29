@@ -291,7 +291,7 @@ class IMChatRoomController {
 
         var list = QMWebSocket.getWebSocketSet()["notification"]
 
-        var message =QMMessage(null,"系统","notification",2,"测试一波",list?.size?:0)
+        var message =QMMessage(null,"系统","notification",2,3,"","测试一波",list?.size?:0)
 
         list?.forEach {
 

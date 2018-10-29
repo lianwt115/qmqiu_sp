@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.scheduling.annotation.Async
 import org.springframework.util.Base64Utils
 import org.springframework.web.bind.annotation.*
+import java.util.*
 
 
 @RestController
@@ -22,6 +23,43 @@ class BaseUserController {
 
        private val logger = LoggerFactory.getLogger(BaseUserController::class.java)
        private val publicPrivateKey = "MIICdgIBADANBgkqhkiG9w0BAQEFAASCAmAwggJcAgEAAoGBAMMN4pDoYaBWEpa2Iy/WiAGBdIYnXOrsvboF0dwW/zXTFL2GRQzb1BTIkvrzY5qm+QzE7JgLLpFLfAOLMP6hF/OdmxWqxwLeUCw9NumY0Cs8nmtmvscFhvhfOretNTLxxX80vxBUv/TqpNnnAQludihMma8Hy/BYJvnYvLouQZwVAgMBAAECgYBOY2wkVF+3sh+yVex6Mzthb4dGytb6yr3M3r3iN5PFK9lv+WAStN3cpGb9V4c2BdidGx8CU6wZVD64pd3A1zjqR+XCaETH4VxzGmfqGzK4w254JO8eDqQ80xBW0Xkk1gQTS6Mf5ibkNbQrh3926Tbla1YcvJcVKvo3isN6q3QwQQJBAP2baB4Le41OsuV2ZSl6upJ2sLaZO8882WxSIVWeKJZuNo2zJKjD559qTM3HGSedxIW0NjmfQ4MqNfjrNj3La30CQQDE5Qrv8M+hXabrmYQ6zMe2s4EJOd4zuHwSQNgbrXOIfYI8QsOiHvs6i70FNpxFi3ESRKq4K6+hdX/YetH/6GZ5AkBzdaZQT2//pH3EBEQIP2zjs4++gkL9lblzHG06upfF7QV/O7kL8KzqIg43fVaRd716FdK+JykodTY/Tm7ScWNNAkEApQ1D3+PEigbR2Io2WHw1pqhPMQa7iCvMhhipkHoUcYSU2iM1j//cpjVh3K7szTeZL7E0U3L7paOz6ir7Q0T0MQJAVYaVgDAoSp9pqPDkN5D7TpXwocqFadmVn3m/zdeGG5CQJtLNGmBwt+NGxlx7dE6baELyNwB1rT9cU4dWLSDJDQ=="
+        private var imgArray = listOf<String>(
+                "qmqiuimg/ab.jpg","qmqiuimg/aj.jpg","qmqiuimg/bghqg.jpg","qmqiuimg/bmyw.jpg",
+                "qmqiuimg/cjl.jpg","qmqiuimg/ck.jpg","qmqiuimg/clxzlmc.jpg","qmqiuimg/dbf.jpg",
+                "qmqiuimg/dcq.jpg","qmqiuimg/deb.jpg","qmqiuimg/dfbb.jpg","qmqiuimg/dq.jpg",
+                "qmqiuimg/dxhys.jpg","qmqiuimg/dy.jpg","qmqiuimg/dyq.jpg","qmqiuimg/emzzr.jpg",
+                "qmqiuimg/gj.jpg","qmqiuimg/gsz.jpg","qmqiuimg/gx.jpg","qmqiuimg/hd.jpg",
+                "qmqiuimg/hr.jpg","qmqiuimg/hsyls.jpg","qmqiuimg/hz.jpg","qmqiuimg/jl.jpg",
+                "qmqiuimg/jlfw.jpg","qmqiuimg/jmsw.jpg","qmqiuimg/jmz.jpg","qmqiuimg/lfh.jpg",
+                "qmqiuimg/lhc.jpg","qmqiuimg/lnhys.jpg","qmqiuimg/lqs.jpg","qmqiuimg/lwt.jpg",
+                "qmqiuimg/lzw.jpg","qmqiuimg/mcf.jpg","qmqiuimg/mg.jpg","qmqiuimg/mlc.jpg",
+                "qmqiuimg/mrb.jpg","qmqiuimg/mrf.jpg","qmqiuimg/mwq.jpg","qmqiuimg/mwq1.jpg",
+                "qmqiuimg/nddzx.jpg","qmqiuimg/oyk.jpg","qmqiuimg/qf.jpg","qmqiuimg/qq.jpg",
+                "qmqiuimg/qqr.jpg","qmqiuimg/rwx.jpg","qmqiuimg/ryy.jpg","qmqiuimg/se.jpg",
+                "qmqiuimg/sg.jpg","qmqiuimg/shlxz.jpg","qmqiuimg/sqs.jpg","qmqiuimg/tbg.jpg",
+                "qmqiuimg/tstl.jpg","qmqiuimg/wxb.jpg","qmqiuimg/wyy.jpg","qmqiuimg/wyz.jpg",
+                "qmqiuimg/xdoyf.jpg","qmqiuimg/xln.jpg","qmqiuimg/xln1.jpg","qmqiuimg/xys.jpg",
+                "qmqiuimg/xz.jpg","qmqiuimg/yd.jpg","qmqiuimg/yen.jpg","qmqiuimg/yg.jpg",
+                "qmqiuimg/yg1.jpg","qmqiuimg/yk.jpg","qmqiuimg/yl.jpg","qmqiuimg/yls.jpg",
+                "qmqiuimg/yzh.jpg","qmqiuimg/zl.jpg","qmqiuimg/zm.jpg","qmqiuimg/zs.jpg",
+                "qmqiuimg/zstwcy.jpg","qmqiuimg/zzr.jpg"
+                ).toMutableList()
+
+
+       private fun getImgPath():String{
+
+           var index = System.currentTimeMillis()%(imgArray.size)
+
+           return imgArray[index.toInt()]
+
+       }
+        private fun getColor():Int{
+
+           var index = Random().nextInt(19921205)
+
+           return index
+
+       }
 
     }
 
@@ -67,8 +105,7 @@ class BaseUserController {
 
                 var savePassword = Base64Utils.encodeToString( RSAUtils.encryptData(password.toByteArray(),keyPair!!.public)!!)
 
-                var user=BaseUser(null,name,savePassword,Base64Utils.encodeToString(keyPair!!.private.encoded),Base64Utils.encodeToString(keyPair!!.public.encoded))
-
+                var user=BaseUser(null,name,savePassword, getImgPath(), getColor(),Base64Utils.encodeToString(keyPair!!.private.encoded),Base64Utils.encodeToString(keyPair!!.public.encoded))
 
                 userService.insert(user)
 
