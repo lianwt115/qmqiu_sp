@@ -6,6 +6,7 @@ import com.lwt.qmqiu_sps1.bean.LoginLog
 import com.lwt.qmqiu_sps1.dao.EnterRoomLogDao
 import com.lwt.qmqiu_sps1.dao.LoginLogDao
 import com.lwt.qmqiu_sps1.myinterface.BaseDaoInterface
+import com.lwt.qmqiu_sps1.myinterface.EnterRoomLogDaoInterface
 import com.mongodb.client.result.DeleteResult
 import com.mongodb.client.result.UpdateResult
 import org.springframework.beans.factory.annotation.Autowired
@@ -13,7 +14,8 @@ import org.springframework.stereotype.Service
 
 
 @Service("enterRoomLogService")
-class EnterRoomLogService:BaseDaoInterface<EnterRoomLog> {
+class EnterRoomLogService:BaseDaoInterface<EnterRoomLog> ,EnterRoomLogDaoInterface<EnterRoomLog> {
+
 
 
     @Autowired
@@ -40,6 +42,15 @@ class EnterRoomLogService:BaseDaoInterface<EnterRoomLog> {
 
     override fun delete(_id: String): DeleteResult {
         return enterRoomLogDao.delete(_id)
+    }
+    override fun getActiveUser(roomNumber: String, limit: Int): List<EnterRoomLog>? {
+
+        return enterRoomLogDao.getActiveUser(roomNumber,limit)
+    }
+
+    override fun checkRoomUser(name: String, roomNumber: String): EnterRoomLog? {
+
+        return enterRoomLogDao.checkRoomUser(name,roomNumber)
     }
 
 }

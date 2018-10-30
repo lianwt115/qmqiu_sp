@@ -3,9 +3,11 @@ package com.lwt.qmqiu_sps1.dao
 import com.lwt.qmqiu_sps1.bean.EnterRoomLog
 import com.lwt.qmqiu_sps1.bean.LoginLog
 import com.lwt.qmqiu_sps1.myinterface.BaseDaoInterface
+import com.lwt.qmqiu_sps1.myinterface.EnterRoomLogDaoInterface
 import com.mongodb.client.result.DeleteResult
 import com.mongodb.client.result.UpdateResult
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
@@ -13,7 +15,7 @@ import org.springframework.data.mongodb.core.query.Update
 import org.springframework.stereotype.Repository
 
 @Repository("enterRoomLogDao")
-class EnterRoomLogDao: BaseDaoInterface<EnterRoomLog> {
+class EnterRoomLogDao: BaseDaoInterface<EnterRoomLog>,EnterRoomLogDaoInterface<EnterRoomLog> {
 
 
     @Autowired
@@ -75,6 +77,31 @@ class EnterRoomLogDao: BaseDaoInterface<EnterRoomLog> {
         return mongoTemplate.updateMulti(query, update!!, EnterRoomLog::class.java)
 
     }
+
+    override fun checkRoomUser(name: String, roomNumber: String): EnterRoomLog? {
+        val query = Query(Criteria.where("name").`is`(name))
+
+        query.addCriteria(Criteria.where("roomNumber").`is`(roomNumber))
+
+        var enterlog =  mongoTemplate.findOne(query,EnterRoomLog::class.java)
+
+        return enterlog
+    }
+
+    override fun getActiveUser(roomNumber: String, limit: Int): List<EnterRoomLog>? {
+
+
+        val query = Query(Criteria.where("roomNumber").`is`(roomNumber))
+
+        query.with(Sort(Sort.DEFAULT_DIRECTION,"messageCount"))
+
+        query.limit(if (limit<0)10 else limit)
+
+        return mongoTemplate.find(query,EnterRoomLog::class.java)
+
+    }
+
+
 
     override fun delete(_id: String): DeleteResult {
         val criteria = Criteria.where("_id").`is`(_id)

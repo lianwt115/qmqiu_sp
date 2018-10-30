@@ -3,6 +3,7 @@ package com.lwt.qmqiu_sps1.controller
 
 import com.google.gson.Gson
 import com.lwt.qmqiu_sps1.bean.BaseHttpResponse
+import com.lwt.qmqiu_sps1.bean.BaseUser
 import com.lwt.qmqiu_sps1.bean.EnterRoomLog
 import com.lwt.qmqiu_sps1.bean.IMChatRoom
 import com.lwt.qmqiu_sps1.service.BaseUserService
@@ -34,6 +35,7 @@ class EnterRoomLogController {
 
         USER_NOTFIND(201,"用户不存在"),
         ROOM_NOTFIND(202,"房间不存在"),
+        ROOMUSER_NOTFIND(203,"用户不在房间内,或未发言"),
 
     }
 
@@ -116,6 +118,108 @@ class EnterRoomLogController {
         }
 
 
+        return baseR
+    }
+
+    //搜索房间内活跃群组用户
+    @GetMapping("/getactiveuser")
+    fun getActiveUser(@RequestParam("name") name:String,@RequestParam("roomNumber") roomNumber:String): BaseHttpResponse<List<BaseUser>> {
+
+        var baseR= BaseHttpResponse<List<BaseUser>>()
+
+        //是否存在  name和roomNumber对应的房间,若果有则查找房间相关用户,按messageCount排序,返回排名靠前的10位用户
+
+        var exist = enterRoomLogService.checkRoomUser(name,roomNumber)
+
+        if (exist!=null){
+
+            var list = enterRoomLogService.getActiveUser(roomNumber,10)
+
+            if (list != null && list.isNotEmpty()){
+
+                var userList = ArrayList<BaseUser>()
+
+                list.forEach {
+
+                   var user =  userService.findByKey("name",it.name!!)
+
+                    if (user != null)
+                        userList.add(user)
+
+                }
+
+                baseR.data = userList
+
+            }
+
+        }else{
+
+            baseR.code = EnterRoomLogErr.ROOMUSER_NOTFIND.code
+            baseR.message = EnterRoomLogErr.ROOMUSER_NOTFIND.message
+
+        }
+        return baseR
+    }
+    //退出并删除
+    @GetMapping("/exitanddelete")
+    fun exitAndDelete(@RequestParam("name") name:String,@RequestParam("roomNumber") roomNumber:String): BaseHttpResponse<Boolean> {
+
+        var baseR= BaseHttpResponse<Boolean>()
+
+        //是否存在  name和roomNumber对应的房间,若果有则查找房间相关用户,按messageCount排序,返回排名靠前的10位用户
+
+        var roomLog = enterRoomLogService.checkRoomUser(name,roomNumber)
+
+        if (roomLog !=null){
+
+
+            //删除我的列表
+            when (enterRoomLogService.delete(roomLog._id!!).deletedCount) {
+
+                0L -> {
+
+                    baseR.data = false
+
+                }
+
+                else -> {
+
+                    baseR.data = true
+
+                }
+            }
+
+            //如果房主也是我,则将房间状态改为false
+            var room = imChatRoomService.findByKey("roomNumber",roomNumber)
+
+            if (room !=null && room.creatName == name ){
+
+                var hash = HashMap<String,Any>()
+
+                hash["status"] = false
+
+                when (imChatRoomService.updata(roomNumber,hash).modifiedCount) {
+
+                    0L-> {
+
+                        baseR.data = false
+
+                    }
+                    else -> {
+
+                        baseR.data = true
+
+                    }
+                }
+
+            }
+
+        }else{
+
+            baseR.code = EnterRoomLogErr.ROOMUSER_NOTFIND.code
+            baseR.message = EnterRoomLogErr.ROOMUSER_NOTFIND.message
+            baseR.data = false
+        }
         return baseR
     }
 

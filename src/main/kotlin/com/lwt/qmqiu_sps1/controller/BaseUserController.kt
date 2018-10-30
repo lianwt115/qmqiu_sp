@@ -13,6 +13,7 @@ import org.springframework.scheduling.annotation.Async
 import org.springframework.util.Base64Utils
 import org.springframework.web.bind.annotation.*
 import java.util.*
+import kotlin.collections.HashMap
 
 
 @RestController
@@ -199,7 +200,8 @@ class BaseUserController {
 
                         //更新登出时间
                         updataLoginTime(userFind,time,false)
-
+                        //登出
+                        insertLoginLog(userFind,time,loginWhere,latitude,longitude,false)
                         baseR.data = true
 
                     }else{
@@ -304,6 +306,7 @@ class BaseUserController {
 
 
         updata[if (status)"lastLoginTime" else "lastLoginOutTime"] = time
+
         updata["status"] = status
 
         logger.info("path:/login(更新登录时间)  name:${baseUser.name} success:${userService.updata(baseUser._id!!,updata).modifiedCount > 0}")
@@ -311,9 +314,71 @@ class BaseUserController {
     }
 
     @Async
-    fun insertLoginLog(userFind: BaseUser, time: Long, loginWhere: String, latitude: Double, longitude: Double) {
+    fun insertLoginLog(userFind: BaseUser, time: Long, where: String, latitude: Double, longitude: Double,login:Boolean=true) {
 
-        loginService.insert(LoginLog(null,userFind.name,loginWhere,latitude,longitude,time))
+
+        var log = loginService.findByKey("name",userFind.name!!)
+
+        when (log) {
+
+            null -> {
+
+                loginService.insert(LoginLog(null,userFind.name,where,latitude,longitude,time))
+
+            }
+            else -> {
+                //修改
+                when (login) {
+
+                    true -> {
+                        var hash = HashMap<String,Any>()
+
+                        hash["loginWhere"]=where
+                        hash["latitude"]=latitude
+                        hash["longitude"]=longitude
+                        hash["loginTime"]=time
+
+                        when (loginService.updata(log._id!!,hash).modifiedCount) {
+
+                            0L -> {
+                                logger.error("更新登录信息失败")
+                            }
+
+                            else -> {
+
+                                logger.error("更新登录信息成功")
+
+                            }
+                        }
+
+                    }
+
+
+                    false -> {
+                        var hash = HashMap<String,Any>()
+
+                        hash["loginOutWhere"]=where
+                        hash["latitudeOut"]=latitude
+                        hash["longitudeOut"]=longitude
+                        hash["loginOutTime"]=time
+
+                        when (loginService.updata(log._id!!,hash).modifiedCount) {
+
+                            0L -> {
+                                logger.error("更新登录信息失败")
+                            }
+
+                            else -> {
+
+                                logger.error("更新登录信息成功")
+
+                            }
+                        }
+                    }
+                }
+
+            }
+        }
     }
 
 

@@ -33,7 +33,13 @@ class LoginLogDao: BaseDaoInterface<LoginLog> {
     }
 
     override fun findByKey(key: String, value: Any): LoginLog? {
+
         val query = Query(Criteria.where(key).`is`(value))
+
+        var time =System.currentTimeMillis()
+
+        //登录时间在一小时内的记录
+        query.addCriteria(Criteria.where("loginTime").gte(time-1000*60*60))
 
         return mongoTemplate.findOne(query,LoginLog::class.java)
     }
