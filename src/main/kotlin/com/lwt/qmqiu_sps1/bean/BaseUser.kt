@@ -16,6 +16,11 @@ data class BaseUser(
         var status: Boolean?=true,
         var lastLoginTime:Long = System.currentTimeMillis(),
         var lastLoginOutTime:Long = System.currentTimeMillis(),
-        var creatTime:Long? = System.currentTimeMillis()
+        var creatTime:Long = System.currentTimeMillis(),
+        var male:Boolean = true,
+        var age:Int = 18,
+        var coinbase:Int = 0,
+        var coin:Int = 0,
+        var gift:String ="0*0*0*0"
 
 )

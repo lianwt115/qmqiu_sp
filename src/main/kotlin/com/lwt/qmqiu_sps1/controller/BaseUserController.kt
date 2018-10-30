@@ -271,15 +271,17 @@ class BaseUserController {
     }
 
 
-    @GetMapping("/findbyid")
-    fun findById(@RequestParam("_id") _id:String): BaseHttpResponse<BaseUser> {
+    @GetMapping("/findbyname")
+    fun findById(@RequestParam("name") name:String): BaseHttpResponse<BaseUser> {
 
         var baseR=BaseHttpResponse<BaseUser>()
-        var user = userService.findByKey("_id",_id)
+        var user = userService.findByKey("name",name)
 
         if (user == null){
 
             baseR.message = BaseUserErr.USER_NOTFIND.message
+            baseR.code = BaseUserErr.USER_NOTFIND.code
+
         }
 
         baseR.data = user
