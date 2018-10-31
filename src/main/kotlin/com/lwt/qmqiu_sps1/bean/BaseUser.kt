@@ -19,8 +19,11 @@ data class BaseUser(
         var creatTime:Long = System.currentTimeMillis(),
         var male:Boolean = true,
         var age:Int = 18,
+        //货币名为青木,用途为开房
         var coinbase:Int = 0,
+        //货币名为青木球,用途为购买礼物
         var coin:Int = 0,
         var gift:String ="0*0*0*0"
+
 
 )
