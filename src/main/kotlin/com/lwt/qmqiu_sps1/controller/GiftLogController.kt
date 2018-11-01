@@ -3,8 +3,10 @@ package com.lwt.qmqiu_sps1.controller
 
 import com.lwt.qmqiu_sps1.bean.BaseHttpResponse
 import com.lwt.qmqiu_sps1.bean.BaseUser
+import com.lwt.qmqiu_sps1.bean.CoinLog
 import com.lwt.qmqiu_sps1.bean.GiftLog
 import com.lwt.qmqiu_sps1.service.BaseUserService
+import com.lwt.qmqiu_sps1.service.CoinLogService
 import com.lwt.qmqiu_sps1.service.GiftLogService
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -43,6 +45,9 @@ class GiftLogController {
 
     @Autowired
     private lateinit var userService: BaseUserService
+
+    @Autowired
+    private lateinit var coinLogService: CoinLogService
 
     @PostMapping("/giftbuy")
     fun giftBuy(@RequestParam("name") name:String, @RequestParam("cashCount") cashCount:Int,@RequestParam("giftCount") giftCount:String,@RequestParam("priceCount") priceCount:String): BaseHttpResponse<BaseUser> {
@@ -101,6 +106,20 @@ class GiftLogController {
 
                                     giftLog.happenTime = System.currentTimeMillis()
 
+                                    var coinLog = CoinLog()
+
+                                    coinLog.coinType = 1
+
+                                    coinLog.cashType = 1
+
+                                    coinLog.cash = cashCount
+
+                                    coinLog.name = name
+
+                                    coinLog.toType = 2
+
+                                    coinLog.happenTime = giftLog.happenTime
+
                                     //修改个人信息
                                     //修改货币
                                     user.coin = user.coin - useCash
@@ -130,7 +149,7 @@ class GiftLogController {
 
                                             //插入购买记录
                                             giftLogService.insert(giftLog)
-
+                                            coinLogService.insert(coinLog)
                                             baseR.data =  user
 
                                         }
@@ -219,6 +238,28 @@ class GiftLogController {
                         if (giftCount > 0){
 
                             if (fromUser.gift.split("*")[giftIndex].toInt() >= giftCount){
+                                //插入赠送记录,并修改个人信息
+                                var giftLog = GiftLog()
+
+                                giftLog.type = 1
+
+                                giftLog.cash = 0
+
+                                var giftList = "0*0*0*0".split("*") as ArrayList<String>
+
+                                giftList[giftIndex] = giftCount.toString()
+
+                                giftLog.giftCount = giftList[0].plus("*${giftList[1]}*${giftList[2]}*${giftList[3]}")
+
+                                giftLog.giftPrice = priceList[giftIndex].toString()
+
+                                giftLog.name = name
+
+                                giftLog.from = name
+
+                                giftLog.to = to
+
+                                giftLog.happenTime = System.currentTimeMillis()
 
                                 //完成赠送手续
                                 var fromCountNow = fromUser.gift.split("*")[giftIndex].toInt() - giftCount
@@ -245,6 +286,8 @@ class GiftLogController {
                                 var toModifiedCount = userService.updata(toUser._id!!,toHash).modifiedCount
 
                                 if (fromModifiedCount > 0 && toModifiedCount>0){
+
+                                    giftLogService.insert(giftLog)
 
                                     fromUser.gift = fromHash["gift"] as String
 
