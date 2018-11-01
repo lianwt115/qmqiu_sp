@@ -1,6 +1,7 @@
 package com.lwt.qmqiu_sps1.controller
 
 
+import com.google.gson.Gson
 import com.lwt.qmqiu_sps1.bean.BaseHttpResponse
 import com.lwt.qmqiu_sps1.bean.BaseUser
 import com.lwt.qmqiu_sps1.bean.CoinLog
@@ -8,6 +9,8 @@ import com.lwt.qmqiu_sps1.bean.GiftLog
 import com.lwt.qmqiu_sps1.service.BaseUserService
 import com.lwt.qmqiu_sps1.service.CoinLogService
 import com.lwt.qmqiu_sps1.service.GiftLogService
+import com.lwt.qmqiu_sps1.websocket.QMMessage
+import com.lwt.qmqiu_sps1.websocket.QMWebSocket
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.*
@@ -22,7 +25,11 @@ class GiftLogController {
 
        private val logger = LoggerFactory.getLogger(GiftLogController::class.java)
 
-       private val priceList = listOf<Int>(18,38,68,88)
+       private val priceList = listOf(18,38,68,88)
+       private val giftUnitList = listOf("个","多","台","顶")
+       private val giftNameList = listOf("天使宝贝","挚爱玫瑰","激情跑车","女王皇冠")
+       private val giftPathList = listOf("angel.svga","rose.svga","posche.svga","kingset.svga")
+
     }
 
     enum class GiftLogErr(var code:Int,var message:String){
@@ -289,6 +296,8 @@ class GiftLogController {
 
                                     giftLogService.insert(giftLog)
 
+                                    //发送礼物通知
+                                    giftSendNotification(name,to,giftIndex,giftCount)
                                     fromUser.gift = fromHash["gift"] as String
 
                                     baseR.data = fromUser
@@ -348,6 +357,19 @@ class GiftLogController {
         }
 
         return baseR
+    }
+
+    private fun giftSendNotification(from: String, to: String, giftIndex: Int, giftCount: Int) {
+
+        var gson = Gson()
+
+        val message = giftCount.toString().plus("*${giftUnitList[giftIndex]}*${giftNameList[giftIndex]}*${giftPathList[giftIndex]}")
+
+        //数量-单位-名称-动画名称
+        var qmMessage = QMMessage(null,from,to,2,0,"",message,0)
+
+        QMWebSocket.sendNotification(gson.toJson(qmMessage),false,to)
+
     }
 
 }

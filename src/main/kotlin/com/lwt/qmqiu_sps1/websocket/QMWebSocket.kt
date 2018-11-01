@@ -35,11 +35,15 @@ class QMWebSocket {
     companion object {
 
         private val baseUrl = "http://localhost:9898/api/"
+        private val NOTIFICATION = "notification"
 
         private var onlineCount = 0
 
-        //concurrent包的线程安全Set，用来存放每个客户端对应的MyWebSocket对象。
+        //concurrent包的线程安全Set，用来存放每个客户端对应的MyWebSocket对象。 房间 - wsList
         private val webSocketSet = ConcurrentHashMap<String,ArrayList<QMWebSocket>>()
+
+        //通知ws集合
+        private val webSocketSetNotification = ConcurrentHashMap<String,QMWebSocket>()
 
         private val idWSSet = ConcurrentHashMap<Session,QMWebSocket>()
 
@@ -47,13 +51,32 @@ class QMWebSocket {
 
         private val logger = LoggerFactory.getLogger(QMWebSocket::class.java)
 
-        fun getWebSocketSet(): ConcurrentHashMap<String, ArrayList<QMWebSocket>> {
-            return webSocketSet
+        fun sendNotification(qmMessage: String,all:Boolean=true,to:String = "SYS"){
+
+            if (all){
+
+                webSocketSetNotification.forEach { t: String, u: QMWebSocket ->
+
+                    u.sendMessage(qmMessage)
+
+                }
+
+            }else{
+
+                if (webSocketSetNotification.containsKey(NOTIFICATION.plus(to)))
+                    webSocketSetNotification[NOTIFICATION.plus(to)]!!.sendMessage(qmMessage)
+                else
+                    logger.error(to.plus("不在线"))
+
+            }
+
         }
+
     }
 
     //与某个客户端的连接会话，需要通过它来给客户端发送数据
     private var session: Session? = null
+    private var number = ""
 
     /**
      * 连接建立成功调用的方法 */
@@ -61,9 +84,16 @@ class QMWebSocket {
     fun onOpen(@PathParam(value = "number") number:String, session: Session) {
         this.session = session
 
+        this.number = number
+
         //验证房间号存不存在
 
-        if (number == "notification" || roomExist(number)){
+        if (number.startsWith(NOTIFICATION)){
+
+            webSocketSetNotification[number] = this@QMWebSocket
+
+        }else if (roomExist(number)){
+
             logger.info(number.plus("连接了"))
 
             if (webSocketSet.keys.contains(number)){
@@ -97,6 +127,44 @@ class QMWebSocket {
 
         }
 
+
+
+
+        /*if (number == "notification" || roomExist(number)){
+
+            logger.info(number.plus("连接了"))
+
+            if (webSocketSet.keys.contains(number)){
+
+                webSocketSet[number]!!.add(this@QMWebSocket)
+
+            }else{
+
+                var list =  ArrayList<QMWebSocket>()
+
+                list.add(this@QMWebSocket)
+
+                webSocketSet[number] = list
+
+            }
+
+            idWSSet[this.session!!] = this
+            idNameSet[this.session!!] = number
+            //总在线数加1
+            addOnlineCount()
+
+            logger.info("有新连接加入！当前在线人数为:${getOnlineCount()}")
+
+            //只更新房间人数
+            updataRoom(number,webSocketSet[number]!!.size,1)
+
+        }else{
+
+            logger.info("非法连接:$number")
+            this.session?.close()
+
+        }*/
+
     }
 
     /**
@@ -105,6 +173,12 @@ class QMWebSocket {
     @OnClose
     fun onClose() {
 
+        if (this.number.startsWith(NOTIFICATION)){
+
+            webSocketSetNotification.remove(this.number)
+
+            return
+        }
 
         try {
 

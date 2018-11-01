@@ -285,23 +285,4 @@ class IMChatRoomController {
     }
 
 
-    //测试通过可以发全局通知
-    @GetMapping("/test")
-    fun test(): BaseHttpResponse<Boolean> {
-
-        var list = QMWebSocket.getWebSocketSet()["notification"]
-
-        var message =QMMessage(null,"系统","notification",2,3,"","测试一波",list?.size?:0)
-
-        list?.forEach {
-
-            it.sendMessage(Gson().toJson(message))
-        }
-
-        var baseR= BaseHttpResponse<Boolean>()
-        baseR.data = true
-        return baseR
-    }
-
-
 }
