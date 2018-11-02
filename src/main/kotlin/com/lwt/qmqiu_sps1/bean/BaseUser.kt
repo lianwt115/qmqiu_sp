@@ -23,6 +23,8 @@ data class BaseUser(
         var coinbase:Int = 0,
         //货币名为青木球,用途为购买礼物
         var coin:Int = 0,
+        //被举报次数
+        var reported:Int = 0,
         var gift:String ="0*0*0*0"
 
 

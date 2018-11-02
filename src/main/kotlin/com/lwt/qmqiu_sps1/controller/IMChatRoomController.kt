@@ -30,6 +30,7 @@ class IMChatRoomController {
         ROOM_EXITS(206,"房间名已存在,请更换重试"),
         ROOM_FLY(207,"定位不在地球上"),
         ROOM_CASH(208,"货币不足"),
+        ROOM_REFUSE(209,"抱歉,对方阻止了你"),
 
     }
 
@@ -44,6 +45,9 @@ class IMChatRoomController {
 
     @Autowired
     private lateinit var coinLogService: CoinLogService
+
+    @Autowired
+    private lateinit var refuseLogService: RefuseLogService
 
     @GetMapping("/getroom")
     fun getAllRoom(@RequestParam("name") name:String, @RequestParam("latitude") latitude:Double,@RequestParam("longitude") longitude:Double,@RequestParam("type") type:Int): BaseHttpResponse<List<IMChatRoom>> {
@@ -194,6 +198,14 @@ class IMChatRoomController {
                     //公共
                     2,3 -> {
 
+                        //查看是否阻止
+                        if (type==3 && chenkRefuse(roomname)){
+
+                            baseR.code = IMChatErr.ROOM_REFUSE.code
+                            baseR.message = IMChatErr.ROOM_REFUSE.message
+
+                        }else{
+
                             val  time = System.currentTimeMillis()
                             var imChatRoom = IMChatRoom(
                                     null,
@@ -220,24 +232,29 @@ class IMChatRoomController {
                                 baseR.message = IMChatErr.ROOM_CASH.message
                             }
 
+                        }
+
                     }
 
                 }
-
 
             }else{
 
                 if (type==3){
 
-                    baseR.data = room
-                    baseR.message = "free"
+                    if (chenkRefuse(room.roomNumber)) {
+                        baseR.code = IMChatErr.ROOM_REFUSE.code
+                        baseR.message = IMChatErr.ROOM_REFUSE.message
+                    }else{
+                        baseR.data = room
+                        baseR.message = "free"
+                    }
+
                 }else{
 
                     baseR.code = IMChatErr.ROOM_EXITS.code
                     baseR.message = IMChatErr.ROOM_EXITS.message
                 }
-
-
 
             }
 
@@ -392,5 +409,25 @@ class IMChatRoomController {
         return baseR
     }
 
+    private fun  chenkRefuse(roomNumber: String):Boolean{
+
+            val info=roomNumber.split("ALWTA")
+
+            if (info.size == 2){
+
+                //检测是否阻止
+                var log = refuseLogService.getRefuseLogOne(info[1],info[0])
+
+                if (log != null && log.status!!)
+                    return true
+
+                return false
+
+            }else{
+
+                return false
+            }
+
+    }
 
 }
