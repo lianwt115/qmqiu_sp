@@ -30,8 +30,9 @@ class MessageLogDao: BaseDaoInterface<QMMessage> {
 
         var currentTime = System.currentTimeMillis()
 
-        //24小时内
-        query.addCriteria(Criteria.where("time").gte(currentTime-1000*60*60L*24))
+        if ("to" == key && !(value as String).contains("ALWTA"))
+            //24小时内
+            query.addCriteria(Criteria.where("time").gte(currentTime-1000*60*60L*24))
 
         return mongoTemplate.find(query,QMMessage::class.java)
     }

@@ -1,20 +1,11 @@
 package com.lwt.qmqiu_sps1.controller
 
 
-import com.google.gson.Gson
 import com.lwt.qmqiu_sps1.bean.*
-import com.lwt.qmqiu_sps1.service.BaseUserService
-import com.lwt.qmqiu_sps1.service.EnterRoomLogService
-import com.lwt.qmqiu_sps1.service.IMChatRoomService
-import com.lwt.qmqiu_sps1.service.LoginLogService
-import com.lwt.qmqiu_sps1.utils.OkHttpUtil
+import com.lwt.qmqiu_sps1.service.*
 import com.lwt.qmqiu_sps1.utils.RSAUtils
-import com.lwt.qmqiu_sps1.websocket.QMMessage
-import com.lwt.qmqiu_sps1.websocket.QMWebSocket
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.data.mongodb.core.query.Criteria
-import org.springframework.scheduling.annotation.Async
 import org.springframework.util.Base64Utils
 import org.springframework.web.bind.annotation.*
 
@@ -38,6 +29,7 @@ class IMChatRoomController {
         ROOM_NOTFIND_MOVE(205,"房间不存在或已偏离位置"),
         ROOM_EXITS(206,"房间名已存在,请更换重试"),
         ROOM_FLY(207,"定位不在地球上"),
+        ROOM_CASH(208,"货币不足"),
 
     }
 
@@ -49,6 +41,9 @@ class IMChatRoomController {
 
     @Autowired
     private lateinit var enterRoomLogService: EnterRoomLogService
+
+    @Autowired
+    private lateinit var coinLogService: CoinLogService
 
     @GetMapping("/getroom")
     fun getAllRoom(@RequestParam("name") name:String, @RequestParam("latitude") latitude:Double,@RequestParam("longitude") longitude:Double,@RequestParam("type") type:Int): BaseHttpResponse<List<IMChatRoom>> {
@@ -105,7 +100,7 @@ class IMChatRoomController {
 
                                 }
 
-                                2 -> {
+                                2,3-> {
 
                                     if (room != null)
                                         list.add(room)
@@ -157,24 +152,34 @@ class IMChatRoomController {
 
                         if ((0<latitude && latitude<90) &&  (0<longitude && longitude<180)){
 
+                            val  time = System.currentTimeMillis()
+
                             var imChatRoom = IMChatRoom(
                                     null,
                                     0,
                                     roomname,
-                                    name.plus(System.currentTimeMillis()),
+                                    name.plus(time),
                                     type,
                                     name,
                                     "",
                                     latitude,
                                     longitude,
-                                    System.currentTimeMillis(),
-                                    System.currentTimeMillis(),
+                                    time,
+                                    time,
                                     true
                             )
-                            baseR.data = imChatRoom
 
-                            imChatRoomService.insert(imChatRoom)
+                            //扣钱
+                            if (roomCash(type,user,time)) {
 
+                                baseR.data = imChatRoom
+
+                                imChatRoomService.insert(imChatRoom)
+
+                            }else{
+                                baseR.code = IMChatErr.ROOM_CASH.code
+                                baseR.message = IMChatErr.ROOM_CASH.message
+                            }
 
                         }else{
 
@@ -187,38 +192,52 @@ class IMChatRoomController {
 
                     }
                     //公共
-                    2 -> {
+                    2,3 -> {
 
-                        if (name == "lwt520"){
+                            val  time = System.currentTimeMillis()
                             var imChatRoom = IMChatRoom(
                                     null,
                                     0,
                                     roomname,
-                                    name.plus(System.currentTimeMillis()),
+                                    if (type == 2)name.plus(time) else roomname,
                                     type,
                                     name,
                                     "",
                                     latitude,
                                     longitude,
-                                    System.currentTimeMillis(),
-                                    System.currentTimeMillis(),
+                                    time,
+                                    time,
                                     true
                             )
-                            baseR.data = imChatRoom
-                            imChatRoomService.insert(imChatRoom)
-                        }else{
+                            //扣钱
+                            if (roomCash(type,user,time)) {
 
-                            baseR.code = IMChatErr.USER_NO.code
-                            baseR.message = IMChatErr.USER_NO.message
+                                baseR.data = imChatRoom
+                                imChatRoomService.insert(imChatRoom)
 
-                        }
+                            }else{
+                                baseR.code = IMChatErr.ROOM_CASH.code
+                                baseR.message = IMChatErr.ROOM_CASH.message
+                            }
 
                     }
+
                 }
+
+
             }else{
 
-                baseR.code = IMChatErr.ROOM_EXITS.code
-                baseR.message = IMChatErr.ROOM_EXITS.message
+                if (type==3){
+
+                    baseR.data = room
+                    baseR.message = "free"
+                }else{
+
+                    baseR.code = IMChatErr.ROOM_EXITS.code
+                    baseR.message = IMChatErr.ROOM_EXITS.message
+                }
+
+
 
             }
 
@@ -230,6 +249,95 @@ class IMChatRoomController {
         }
 
         return baseR
+    }
+
+    private fun roomCash(type: Int, user: BaseUser,time:Long):Boolean {
+
+        //写入消费日志
+        var coinLog = CoinLog()
+
+        coinLog.cashType = 1
+
+        coinLog.name = user.name
+
+        coinLog.happenTime = time
+        //私人10青木  附近50青木  公共100青木
+          when (type) {
+            //附近
+            1 -> {
+
+                when {
+                    user.coinbase>=50 -> {
+
+                        user.coinbase-=50
+                        coinLog.coinType = 0
+                        coinLog.cash = 50
+                    }
+                    user.coin >=5 -> {
+                        user.coin-=5
+                        coinLog.coinType = 1
+                        coinLog.cash = 5
+                    }
+                    else -> return false
+                }
+
+                coinLog.toType=  0
+
+            }
+            //公共
+            2 -> {
+
+                when {
+                    user.coinbase>=100 -> {
+
+                        user.coinbase-=100
+                        coinLog.coinType = 0
+                        coinLog.cash = 100
+                    }
+                    user.coin >=10 -> {
+                        user.coin-=10
+                        coinLog.coinType = 1
+                        coinLog.cash = 10
+                    }
+                    else -> return false
+                }
+
+
+                coinLog.toType=1
+            }
+            //私人
+            3 -> {
+                when {
+                    user.coinbase>=10 -> {
+
+                        user.coinbase-=10
+                        coinLog.coinType = 0
+                        coinLog.cash = 10
+                    }
+                    user.coin >=1 -> {
+                        user.coin-=1
+                        coinLog.coinType = 1
+                        coinLog.cash = 1
+                    }
+                    else -> return false
+                }
+
+                coinLog.toType=4
+
+            }
+
+        }
+        //插入消费记录
+        coinLogService.insert(coinLog)
+        //修改用户数据
+        var hash = HashMap<String,Any>()
+
+        hash["coin"] = user.coin
+        hash["coinbase"] = user.coinbase
+
+        userService.updata(user._id!!,hash)
+
+        return true
     }
 
 

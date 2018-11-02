@@ -9,9 +9,11 @@ data class IMChatRoom(
         @Id
         var _id:String?=null,
 
+        //开放价格  私人10青木  附近50青木  公共100青木
         var currentCount:Int = 0,
         var roomName:String="",
         var roomNumber:String="",
+        //1 附近 2公共 3私人
         var roomType:Int= 0,
         var creatName:String="",
         var lastContent:String="" ,

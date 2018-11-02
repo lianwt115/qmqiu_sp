@@ -10,7 +10,7 @@ data class QMMessage(
 
         var from:String,
         var to:String,
-        //1是房间消息 2是礼物通知
+        //0是房间消息 2是礼物通知
         var type:Int,
         var colorIndex:Int,
         var imgPath:String,

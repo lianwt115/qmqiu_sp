@@ -30,6 +30,7 @@ import javax.websocket.server.PathParam
 @Component
 class QMWebSocket {
 
+    //TODO  查表任务都应异步执行
 
     //静态变量，用来记录当前在线连接数。应该把它设计成线程安全的。
     companion object {
@@ -127,43 +128,6 @@ class QMWebSocket {
 
         }
 
-
-
-
-        /*if (number == "notification" || roomExist(number)){
-
-            logger.info(number.plus("连接了"))
-
-            if (webSocketSet.keys.contains(number)){
-
-                webSocketSet[number]!!.add(this@QMWebSocket)
-
-            }else{
-
-                var list =  ArrayList<QMWebSocket>()
-
-                list.add(this@QMWebSocket)
-
-                webSocketSet[number] = list
-
-            }
-
-            idWSSet[this.session!!] = this
-            idNameSet[this.session!!] = number
-            //总在线数加1
-            addOnlineCount()
-
-            logger.info("有新连接加入！当前在线人数为:${getOnlineCount()}")
-
-            //只更新房间人数
-            updataRoom(number,webSocketSet[number]!!.size,1)
-
-        }else{
-
-            logger.info("非法连接:$number")
-            this.session?.close()
-
-        }*/
 
     }
 
@@ -352,18 +316,27 @@ class QMWebSocket {
     }
 
     private fun insertEnterRoomLog(name: String,roomNumber: String){
+
+        //判断是否是私人房消息
+        var menList = roomNumber.split("ALWTA")
+
+        if (menList.size == 2){
+
+            var hashMap = HashMap<String,String>()
+
+            hashMap["name"] = if (menList[0] == name) menList[1] else menList[0]
+            hashMap["roomNumber"] = roomNumber
+
+            OkHttpUtil.post(baseUrl.plus("enterlog/insertLog"),hashMap)
+
+        }
+
         var hashMap = HashMap<String,String>()
 
         hashMap["name"] = name
         hashMap["roomNumber"] = roomNumber
 
-        var response = OkHttpUtil.post(baseUrl.plus("enterlog/insertLog"),hashMap)
-
-        var gson = Gson()
-
-        var boolean = gson.fromJson<BaseHttpResponse<Boolean>>(response,BaseHttpResponse::class.java)
-
-        logger.error("${roomNumber}房间绑定:${boolean.data}")
+        OkHttpUtil.post(baseUrl.plus("enterlog/insertLog"),hashMap)
 
     }
 
