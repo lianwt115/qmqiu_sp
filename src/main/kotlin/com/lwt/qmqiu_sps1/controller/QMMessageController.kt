@@ -79,9 +79,6 @@ class QMMessageController {
 
                 var qmMessage = gson.fromJson<QMMessage>(message,QMMessage::class.java)
 
-                //加密信息
-                qmMessage.message = Base64Utils.encodeToString( RSAUtils.encryptData(qmMessage.message.toByteArray(),RSAUtils.publucKey)!!)
-
                 messageLogService.insert(qmMessage)
 
                 baseR.data = true

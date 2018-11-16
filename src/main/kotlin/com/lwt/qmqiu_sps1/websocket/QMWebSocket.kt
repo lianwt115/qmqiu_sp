@@ -6,6 +6,7 @@ import com.lwt.qmqiu_sps1.bean.BaseUser
 import com.lwt.qmqiu_sps1.dao.BaseUserDao
 import com.lwt.qmqiu_sps1.service.BaseUserService
 import com.lwt.qmqiu_sps1.utils.OkHttpUtil
+import com.lwt.qmqiu_sps1.utils.RSAUtils
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.mongodb.core.MongoTemplate
@@ -13,6 +14,7 @@ import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
+import org.springframework.util.Base64Utils
 import javax.websocket.server.ServerEndpoint
 import java.io.IOException
 import java.lang.Exception
@@ -198,6 +200,10 @@ class QMWebSocket {
 
             //更新房间绑定
             insertEnterRoomLog(qmMessage.from,qmMessage.to)
+
+            //将message加密
+            //加密信息
+            qmMessage.message = Base64Utils.encodeToString( RSAUtils.encryptData(qmMessage.message.toByteArray(), RSAUtils.publucKey)!!)
 
             sendToPrivate(gson.toJson(qmMessage),qmMessage.to)
 
