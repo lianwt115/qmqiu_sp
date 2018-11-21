@@ -112,7 +112,7 @@ class UploadLogController {
                         uploadLog.path = dest.absolutePath
                         uploadLog.name = fileName
 
-                        uploadLog.length= if (type ==0 ) length else file.size.toInt()
+                        uploadLog.length=  length
 
                         baseR.data = uploadLog
 
@@ -162,6 +162,7 @@ class UploadLogController {
                 if (file.exists()) {
                     response.contentType = "application/force-download"// 设置强制下载不打开
                     response.setHeader("Content-Disposition", "attachment; filename=\"$fileName\"")// 设置文件名
+                    response.setHeader("Content-Length", "${file.length()}")// 设置文件的长度
                     response.contentType = "multipart/form-data;charset=UTF-8"
 
                     var buffer = ByteArray(1024)
