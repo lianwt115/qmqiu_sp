@@ -83,6 +83,9 @@ class UploadLogController {
                         1 -> {
                             "static/images/upload/"
                         }
+                        2 -> {
+                            "static/video/upload/"
+                        }
                         else->{
                             "static/file/upload/"
                         }
