@@ -54,7 +54,7 @@ class QMWebSocket {
 
         private val logger = LoggerFactory.getLogger(QMWebSocket::class.java)
 
-        fun sendNotification(qmMessage: String,all:Boolean=true,to:String = "SYS"){
+        fun sendNotification(qmMessage: String,all:Boolean=true,to:String = "SYS"):Boolean{
 
             if (all){
 
@@ -69,10 +69,11 @@ class QMWebSocket {
                 if (webSocketSetNotification.containsKey(NOTIFICATION.plus(to)))
                     webSocketSetNotification[NOTIFICATION.plus(to)]!!.sendMessage(qmMessage)
                 else
-                    logger.error(to.plus("不在线"))
+                    return false
 
             }
 
+            return true
         }
 
     }
