@@ -26,7 +26,7 @@ class GiftLogController {
        private val logger = LoggerFactory.getLogger(GiftLogController::class.java)
 
        private val priceList = listOf(18,38,68,88)
-       private val giftUnitList = listOf("个","多","台","顶")
+       private val giftUnitList = listOf("个","朵","台","顶")
        private val giftNameList = listOf("天使宝贝","挚爱玫瑰","激情跑车","女王皇冠")
        private val giftPathList = listOf("angel.svga","rose.svga","posche.svga","kingset.svga")
 
