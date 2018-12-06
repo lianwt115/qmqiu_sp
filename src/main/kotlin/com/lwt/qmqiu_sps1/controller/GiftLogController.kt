@@ -44,6 +44,7 @@ class GiftLogController {
         GIFTLOG_PRICEERR(208,"礼物价格异常"),
         GIFTLOG_DBERR(209,"数据库错误"),
         GIFTLOG_NOTENOUGHERR(210,"用户礼物不足"),
+        GIFTLOG_TYPEERR(211,"礼物收支类型异常"),
 
     }
 
@@ -346,6 +347,42 @@ class GiftLogController {
 
                 baseR.code = GiftLogErr.USER_EXIT.code
                 baseR.message = GiftLogErr.USER_EXIT.message
+
+            }
+
+        }else{
+
+            baseR.code = GiftLogErr.USER_NOTFIND.code
+            baseR.message = GiftLogErr.USER_NOTFIND.message
+
+        }
+
+        return baseR
+    }
+
+    @GetMapping("/giftlogget")
+    fun giftLogGet(@RequestParam("name") name:String, @RequestParam("type") type:Int): BaseHttpResponse<List<GiftLog>> {
+
+        var baseR= BaseHttpResponse<List<GiftLog>>()
+
+        //检测用户合法性
+        var fromUser = userService.findByKey("name",name)
+
+        //用户存在
+        if (fromUser != null){
+
+            //根据类型来输出是收到还是送出
+            //1收到  2 送出
+            if (type == 1 || type == 2){
+
+                var list = giftLogService.getAll(if (type == 1)"to" else "from",name)
+
+                baseR.data = list
+
+            }else{
+
+                baseR.code = GiftLogErr.GIFTLOG_TYPEERR.code
+                baseR.message = GiftLogErr.GIFTLOG_TYPEERR.message
 
             }
 
