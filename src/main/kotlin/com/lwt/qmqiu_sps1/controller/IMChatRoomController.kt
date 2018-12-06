@@ -133,6 +133,43 @@ class IMChatRoomController {
         return baseR
     }
 
+    @GetMapping("/getmycreatroom")
+    fun getMyRoom(@RequestParam("name") name:String,@RequestParam("sys") sys:String): BaseHttpResponse<List<IMChatRoom>> {
+
+        var baseR= BaseHttpResponse<List<IMChatRoom>>()
+
+        //检测用户合法性
+        var user = userService.findByKey("name",name)
+
+        if (user != null){
+
+            if(sys == "sys"){
+
+                baseR.data = imChatRoomService.getAll("creatName",name)
+
+            }
+
+            else{
+
+                baseR.code = IMChatErr.USER_NO.code
+                baseR.message = IMChatErr.USER_NO.message
+
+            }
+
+        }else{
+
+            baseR.code = IMChatErr.USER_NOTFIND.code
+            baseR.message = IMChatErr.USER_NOTFIND.message
+
+        }
+
+        if (baseR.data==null) {
+            baseR.data = ArrayList<IMChatRoom>()
+        }
+
+        return baseR
+    }
+
     @PostMapping("/creatroom")
     fun insert(@RequestParam("name") name:String, @RequestParam("roomname") roomname:String,@RequestParam("latitude") latitude:Double,@RequestParam("longitude") longitude:Double,@RequestParam("type") type:Int): BaseHttpResponse<IMChatRoom> {
 

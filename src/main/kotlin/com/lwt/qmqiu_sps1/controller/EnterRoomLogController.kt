@@ -166,60 +166,41 @@ class EnterRoomLogController {
 
         var baseR= BaseHttpResponse<Boolean>()
 
-        //是否存在  name和roomNumber对应的房间,若果有则查找房间相关用户,按messageCount排序,返回排名靠前的10位用户
+        //1.房间存不存在 2.创建者是不是name
 
-        var roomLog = enterRoomLogService.checkRoomUser(name,roomNumber)
+        var room = imChatRoomService.findByKey("roomNumber",roomNumber)
 
-        if (roomLog !=null){
+        if (room !=null){
 
+            //看我是否发言
+            var roomLog = enterRoomLogService.checkRoomUser(name,roomNumber)
 
-            //删除我的列表
-            when (enterRoomLogService.delete(roomLog._id!!).deletedCount) {
+            if (roomLog!=null)
+                //删除我的列表
+                enterRoomLogService.delete(roomLog._id!!).deletedCount
 
-                0L -> {
-
-                    baseR.data = false
-
-                }
-
-                else -> {
-
-                    baseR.data = true
-
-                }
-            }
 
             //如果房主也是我,则将房间状态改为false
-            var room = imChatRoomService.findByKey("roomNumber",roomNumber)
-
-            if (room !=null && room.creatName == name ){
+            if (room.creatName == name ){
 
                 var hash = HashMap<String,Any>()
 
                 hash["status"] = false
 
-                when (imChatRoomService.updata(roomNumber,hash).modifiedCount) {
-
-                    0L-> {
-
-                        baseR.data = false
-
-                    }
-                    else -> {
-
-                        baseR.data = true
-
-                    }
-                }
+               imChatRoomService.updata(roomNumber,hash).modifiedCount
 
             }
 
+            baseR.data = true
+
         }else{
 
-            baseR.code = EnterRoomLogErr.ROOMUSER_NOTFIND.code
-            baseR.message = EnterRoomLogErr.ROOMUSER_NOTFIND.message
+            baseR.code = EnterRoomLogErr.ROOM_NOTFIND.code
+            baseR.message = EnterRoomLogErr.ROOM_NOTFIND.message
             baseR.data = false
+
         }
+
         return baseR
     }
 

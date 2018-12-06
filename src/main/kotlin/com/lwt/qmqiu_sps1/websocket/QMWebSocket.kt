@@ -219,8 +219,9 @@ class QMWebSocket {
 
     @OnError
     fun onError(session: Session, error: Throwable) {
-        logger.error("error:${error.message}")
-        error.printStackTrace()
+
+        logger.error("websocket:用户非正常退出")
+
     }
 
 
