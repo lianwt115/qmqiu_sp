@@ -16,6 +16,8 @@ import java.io.*
 import java.io.BufferedInputStream
 import java.io.FileInputStream
 import java.net.URLEncoder
+import java.text.SimpleDateFormat
+import java.util.*
 
 
 @RestController
@@ -26,6 +28,7 @@ class UploadLogController {
 
        private val logger = LoggerFactory.getLogger(UploadLogController::class.java)
 
+       private val formatter = SimpleDateFormat("yyyyMMdd")
     }
 
     enum class UploadLogErr(var code:Int,var message:String){
@@ -75,19 +78,21 @@ class UploadLogController {
                         path = File("")
                     logger.info("path:"+path.absolutePath)
 
+                    var timeDirs ="static/${formatter.format(Date())}"
+
                     var child = when (type) {
 
                         0 -> {
-                            "static/voice/upload/"
+                            "$timeDirs/voice/upload/"
                         }
                         1 -> {
-                            "static/images/upload/"
+                            "$timeDirs/images/upload/"
                         }
                         2 -> {
-                            "static/video/upload/"
+                            "$timeDirs/video/upload/"
                         }
                         else->{
-                            "static/file/upload/"
+                            "$timeDirs/file/upload/"
                         }
                     }
 

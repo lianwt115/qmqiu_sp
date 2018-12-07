@@ -62,6 +62,7 @@ class BaseUserController {
 
        }
 
+        val ADMIN_USER = "lwt520"
     }
 
     enum class BaseUserErr(var code:Int,var message:String){
