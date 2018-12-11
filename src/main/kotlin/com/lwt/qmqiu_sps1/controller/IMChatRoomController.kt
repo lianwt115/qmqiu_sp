@@ -99,14 +99,12 @@ class IMChatRoomController {
                                 1 -> {
 
                                     if (latitude-0.006 <room.latitude && latitude+0.006 >room.latitude &&  longitude-0.0025 <room.longitude && longitude+0.0025 >room.longitude)
-                                        if (room != null)
                                             list.add(room)
 
                                 }
 
                                 2,3-> {
 
-                                    if (room != null)
                                         list.add(room)
                                 }
                             }

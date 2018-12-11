@@ -33,7 +33,7 @@ class IMChatRoomDao: BaseDaoInterface<IMChatRoom>,IMChatRoomDaoInterface<IMChatR
 
         var list = mongoTemplate.find(query,IMChatRoom::class.java)
 
-        if (list?.size >20){
+        if (list.size >20){
 
             list.shuffle()
 

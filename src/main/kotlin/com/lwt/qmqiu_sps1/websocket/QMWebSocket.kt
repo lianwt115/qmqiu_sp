@@ -58,7 +58,7 @@ class QMWebSocket {
 
             if (all){
 
-                webSocketSetNotification.forEach { t: String, u: QMWebSocket ->
+                webSocketSetNotification.forEach { _: String, u: QMWebSocket ->
 
                     u.sendMessage(qmMessage)
 
@@ -158,7 +158,7 @@ class QMWebSocket {
                 list?.remove(idWSSet[this.session])
 
                 //只更新房间人数
-                updataRoom(name!!,webSocketSet[name]!!.size,1)
+                updataRoom(name,webSocketSet[name]!!.size,1)
             }
 
             idWSSet.remove(this.session)

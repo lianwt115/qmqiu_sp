@@ -8,7 +8,7 @@ data class GiftLog(
         @Id
         var _id:String?=null,
 
-        //0 购买 1赠送
+        //0 购买 1赠送 2兑换
         var type:Int? = 0,
         //总花费
         var cash:Int? = 0,

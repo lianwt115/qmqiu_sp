@@ -10,7 +10,7 @@ data class CoinLog(
 
         //0 青木 1青木球        10青木  -1 青木球
         var coinType:Int? = 0,
-        //0 充值 1消费  充值只能充值青木球
+        //0 充值 1消费  2 兑换 充值只能充值青木球
         var cashType:Int? = 0,
         //交易额
         var cash:Int = 0,
