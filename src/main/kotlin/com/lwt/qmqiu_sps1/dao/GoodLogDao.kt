@@ -2,8 +2,10 @@ package com.lwt.qmqiu_sps1.dao
 
 
 
+import com.lwt.qmqiu_sps1.bean.GoodLog
 import com.lwt.qmqiu_sps1.bean.ReportLog
 import com.lwt.qmqiu_sps1.myinterface.BaseDaoInterface
+import com.lwt.qmqiu_sps1.myinterface.GoodLogDaoInterface
 import com.lwt.qmqiu_sps1.myinterface.ReportLogDaoInterface
 import com.mongodb.client.result.DeleteResult
 import com.mongodb.client.result.UpdateResult
@@ -14,43 +16,43 @@ import org.springframework.data.mongodb.core.query.Query
 import org.springframework.data.mongodb.core.query.Update
 import org.springframework.stereotype.Repository
 
-@Repository("reportLogDao")
-class ReportLogDao: BaseDaoInterface<ReportLog>,ReportLogDaoInterface<ReportLog> {
+@Repository("goodLogDao")
+class GoodLogDao: BaseDaoInterface<GoodLog>,GoodLogDaoInterface<GoodLog> {
 
 
     @Autowired
     private  lateinit var  mongoTemplate: MongoTemplate
 
 
-    override fun getAll(key: String, value: Any?): List<ReportLog> {
+    override fun getAll(key: String, value: Any?): List<GoodLog> {
 
         if (key == "" || value == null)
-            return mongoTemplate.findAll(ReportLog::class.java)
+            return mongoTemplate.findAll(GoodLog::class.java)
 
         val query = Query(Criteria.where(key).`is`(value))
 
-        return mongoTemplate.find(query,ReportLog::class.java)
+        return mongoTemplate.find(query,GoodLog::class.java)
     }
 
-    override fun insert(log: ReportLog) {
+    override fun insert(log: GoodLog) {
 
         return mongoTemplate.insert(log)
     }
 
-    override fun findByKey(key: String, value: Any): ReportLog? {
+    override fun findByKey(key: String, value: Any): GoodLog? {
         val query = Query(Criteria.where(key).`is`(value))
 
-        return mongoTemplate.findOne(query,ReportLog::class.java)
+        return mongoTemplate.findOne(query,GoodLog::class.java)
     }
 
-    override fun checkReport(from: String, to: String, id: String): Boolean {
+    override fun checkGood(from: String, to: String, id: String): Boolean {
         //检测是否是有效举报
         val query = Query(Criteria.where("from").`is`(from))
 
         query.addCriteria(Criteria.where("to").`is`(to))
-        query.addCriteria(Criteria.where("messageId").`is`(id))
+        query.addCriteria(Criteria.where("whereId").`is`(id))
 
-        return mongoTemplate.findOne(query,ReportLog::class.java)!=null
+        return mongoTemplate.findOne(query,GoodLog::class.java)!=null
 
     }
 
@@ -70,13 +72,13 @@ class ReportLogDao: BaseDaoInterface<ReportLog>,ReportLogDaoInterface<ReportLog>
 
        }
 
-        return mongoTemplate.updateMulti(query, update!!, ReportLog::class.java)
+        return mongoTemplate.updateMulti(query, update!!, GoodLog::class.java)
 
     }
 
     override fun delete(_id: String): DeleteResult {
         val criteria = Criteria.where("_id").`is`(_id)
         val query = Query(criteria)
-        return mongoTemplate.remove(query,ReportLog::class.java)
+        return mongoTemplate.remove(query,GoodLog::class.java)
     }
 }
