@@ -10,6 +10,7 @@ data class NoteLog(
 
         //谁创建
         var name:String ="lwt",
+        var showName:String ="lwt",
         var nameImg:String ="lwt",
         //点赞数
         var goodNum:Int = 0,
@@ -27,6 +28,10 @@ data class NoteLog(
         var commentNum:Int = 0,
         //举报次数
         var reportNum:Int = 0,
+        //帖子发表于何处
+        var latitude:Double=0.00,
+        var longitude:Double=0.00 ,
+        var where:String="" ,
         var deleteStatus:Boolean = false,
         var creatTime:Long = System.currentTimeMillis(),
         var deleteTime:Long = 0

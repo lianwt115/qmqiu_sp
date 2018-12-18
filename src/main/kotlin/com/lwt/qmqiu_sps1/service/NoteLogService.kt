@@ -24,8 +24,8 @@ class NoteLogService:BaseDaoInterface<NoteLog>,NoteLogDaoInterface<NoteLog> {
         return noteLogDao.getAll(key,value)
     }
 
-    override fun getNote(noteType: Int, seeType: Int, topic: String?): List<NoteLog> {
-        return noteLogDao.getNote(noteType,seeType,topic)
+    override fun getNote(noteType: Int, latitude: Double, longitude: Double): List<NoteLog> {
+        return noteLogDao.getNote(noteType,latitude,longitude)
     }
 
     override fun insert(reportLog: NoteLog) {

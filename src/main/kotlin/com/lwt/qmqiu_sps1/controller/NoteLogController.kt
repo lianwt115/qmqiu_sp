@@ -51,7 +51,7 @@ class NoteLogController {
 
     //发表帖子
     @PostMapping("/createNote")
-    fun createNoteLog(@RequestParam("name") name:String, @RequestParam("noteType") noteType:Int,@RequestParam("seeType") seeType:Int,@RequestParam("topic") topic:String,@RequestParam("textContent") textContent:String,@RequestParam("imgList") imgList:String): BaseHttpResponse<Boolean> {
+    fun createNoteLog(@RequestParam("name") name:String, @RequestParam("noteType") noteType:Int,@RequestParam("seeType") seeType:Int,@RequestParam("topic") topic:String,@RequestParam("textContent") textContent:String,@RequestParam("imgList") imgList:String,@RequestParam("latitude") latitude:Double,@RequestParam("longitude") longitude:Double,@RequestParam("where") where:String): BaseHttpResponse<Boolean> {
 
         var baseR= BaseHttpResponse<Boolean>()
 
@@ -62,14 +62,17 @@ class NoteLogController {
 
             var noteLog = NoteLog()
 
-            noteLog.name = name
+            noteLog.name = userFrom.name
+            noteLog.showName = userFrom.showName
             noteLog.nameImg = userFrom.imgPath
             noteLog.imgList = imgList
             noteLog.noteType = noteType
             noteLog.seeType = seeType
             noteLog.textContent =textContent
             noteLog.topic = topic
-
+            noteLog.latitude = latitude
+            noteLog.longitude = longitude
+            noteLog.where= where
             noteLogService.insert(noteLog)
 
             baseR.data = true
@@ -86,7 +89,7 @@ class NoteLogController {
 
     //获取帖子
     @PostMapping("/getNote")
-    fun getNoteLog(@RequestParam("name") name:String, @RequestParam("noteType") noteType:Int,@RequestParam("seeType") seeType:Int,@RequestParam("topic") topic:String?=null): BaseHttpResponse<List<NoteLog>> {
+    fun getNoteLog(@RequestParam("name") name:String, @RequestParam("noteType") noteType:Int,@RequestParam("latitude") latitude:Double,@RequestParam("longitude") longitude:Double): BaseHttpResponse<List<NoteLog>> {
 
         var baseR= BaseHttpResponse<List<NoteLog>>()
 
@@ -95,7 +98,7 @@ class NoteLogController {
 
         if (userFrom != null) {
 
-            baseR.data = noteLogService.getNote(noteType,seeType,topic)
+            baseR.data = noteLogService.getNote(noteType,latitude,longitude)
 
         }else{
 
