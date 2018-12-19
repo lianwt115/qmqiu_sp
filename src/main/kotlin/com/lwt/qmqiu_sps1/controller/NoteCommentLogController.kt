@@ -81,6 +81,21 @@ class NoteCommentLogController {
 
                     noteCommentLogService.delete(id)
 
+                    //相应的帖子评论 -1
+                    var note = noteLogService.findByKey("_id",log.whereId!!)
+
+                    if (note !=null){
+
+                        note.commentNum --
+
+                        var hash = HashMap<String,Any>()
+
+                        hash["commentNum"] = note.commentNum
+
+                        noteLogService.updata(note._id!!,hash)
+
+                    }
+
                     baseR.data = true
 
                 }else{

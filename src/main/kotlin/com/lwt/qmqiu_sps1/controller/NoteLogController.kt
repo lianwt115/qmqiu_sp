@@ -29,7 +29,7 @@ class NoteLogController {
 
     enum class NoteLogErr(var code:Int,var message:String){
 
-        USER_NOTFIND(201,"发表失败,用户不存在"),
+        USER_NOTFIND(201,"用户不存在"),
         DELETE_ERR(202,"帖子不存在,删除失败"),
         REPORT_ERR(203,"举报失败,重复举报"),
         REPORT_ERR1(204,"帖子举报过多已被删除"),
@@ -99,6 +99,28 @@ class NoteLogController {
         if (userFrom != null) {
 
             baseR.data = noteLogService.getNote(noteType,latitude,longitude)
+
+        }else{
+
+            baseR.code = NoteLogErr.USER_NOTFIND.code
+            baseR.message = NoteLogErr.USER_NOTFIND.message
+
+        }
+
+        return baseR
+    }
+    //获取帖子
+    @PostMapping("/getMyNote")
+    fun getMyNoteLog(@RequestParam("name") name:String): BaseHttpResponse<List<NoteLog>> {
+
+        var baseR= BaseHttpResponse<List<NoteLog>>()
+
+        //检测用户合法性
+        var userFrom = userService.findByKey("name",name)
+
+        if (userFrom != null) {
+
+            baseR.data = noteLogService.getAll("name",name)
 
         }else{
 
@@ -185,11 +207,14 @@ class NoteLogController {
                             }
 
                             noteLogService.updata(log._id!!,hash)
+                            baseR.data =true
 
+                        }else{
 
+                            baseR.data =false
                         }
 
-                baseR.data =true
+
 
             }else{
 
@@ -241,10 +266,11 @@ class NoteLogController {
                             hash["goodNum"] = log.goodNum
 
                             noteLogService.updata(log._id!!,hash)
+                            baseR.data =true
+                        }else{
 
+                            baseR.data = false
                         }
-
-                    baseR.data =true
 
             }else{
 
