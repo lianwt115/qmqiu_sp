@@ -10,6 +10,7 @@ data class NoteCommentLog(
 
         //谁
         var from:String? = "",
+        var fromShow:String? = "",
         var fromImg:String? = "",
         //评论谁
         var to:String? = "",
@@ -19,6 +20,7 @@ data class NoteCommentLog(
         var whereId:String? = "",
         //评论内容
         var commentContent:String? = "",
+        var reportNum:Int = 0,
         //评论时间
         var commentTime:Long = System.currentTimeMillis()
 

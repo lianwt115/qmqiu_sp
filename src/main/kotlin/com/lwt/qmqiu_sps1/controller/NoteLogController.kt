@@ -72,7 +72,7 @@ class NoteLogController {
             noteLog.topic = topic
             noteLog.latitude = latitude
             noteLog.longitude = longitude
-            noteLog.where= where
+            noteLog.whereLocation= where
             noteLogService.insert(noteLog)
 
             baseR.data = true
@@ -146,7 +146,12 @@ class NoteLogController {
 
             if (log!=null && !log.deleteStatus && log.name == name ){
 
-                noteLogService.delete(id)
+                //真实删除  做成隐藏
+                var hash = HashMap<String,Any>()
+
+                hash["deleteStatus"] = true
+                hash["deleteTime"] = System.currentTimeMillis()
+                noteLogService.updata(log._id!!,hash)
 
                 baseR.data = true
 

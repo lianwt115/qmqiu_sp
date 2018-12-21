@@ -20,7 +20,7 @@ class NoteCommentLogController {
     companion object {
 
        private val logger = LoggerFactory.getLogger(NoteCommentLogController::class.java)
-
+       private val DELETE_NUM = 20
     }
 
     enum class NoteCommentLogErr(var code:Int,var message:String){
@@ -29,7 +29,7 @@ class NoteCommentLogController {
         COMMENT_NOTFIND(202,"评论不存在"),
         COMMENT_ERR(203,"删除失败,权限不够"),
         Note_NOTFIND(204,"帖子不存在"),
-
+        REPORT_ERR1(205,"评论举报过多已被删除"),
     }
 
     @Autowired
@@ -40,6 +40,9 @@ class NoteCommentLogController {
 
     @Autowired
     private lateinit var noteLogService: NoteLogService
+
+    @Autowired
+    private lateinit var reportService: ReportLogService
 
     @GetMapping("/getComment")
     fun getNoteCommentLog(@RequestParam("name") name:String, @RequestParam("id") id:String): BaseHttpResponse<List<NoteCommentLog>> {
@@ -111,9 +114,7 @@ class NoteCommentLogController {
                 baseR.code = NoteCommentLogErr.COMMENT_NOTFIND.code
                 baseR.message = NoteCommentLogErr.COMMENT_NOTFIND.message
 
-
             }
-
 
         }else{
 
@@ -144,6 +145,7 @@ class NoteCommentLogController {
 
                 noteCommentLog.commentContent = commentContent
                 noteCommentLog.from = name
+                noteCommentLog.fromShow = userFrom.showName
                 noteCommentLog.fromImg = userFrom.imgPath
                 noteCommentLog.to = log.name
                 //评论id
@@ -168,6 +170,70 @@ class NoteCommentLogController {
                 baseR.code = NoteCommentLogErr.Note_NOTFIND.code
                 baseR.message = NoteCommentLogErr.Note_NOTFIND.message
 
+            }
+
+        }else{
+
+            baseR.code = NoteCommentLogErr.USER_NOTFIND.code
+            baseR.message = NoteCommentLogErr.USER_NOTFIND.message
+
+        }
+
+        return baseR
+    }
+
+    @PostMapping("/report")
+    fun reportNoteLog(@RequestParam("name") name:String, @RequestParam("id") id:String,@RequestParam("why") why:Int): BaseHttpResponse<Boolean> {
+
+        var baseR= BaseHttpResponse<Boolean>()
+
+        //检测用户合法性
+        var userFrom = userService.findByKey("name",name)
+
+        if (userFrom != null) {
+
+            //查找评论id
+            var log = noteCommentLogService.findByKey("_id",id)
+
+            if (log!=null){
+
+                //检测该人举报过没有,如果已经举报过则
+                if (!reportService.checkReport(name,log.from!!, log._id!!)) {
+
+                    var reportLog = ReportLog()
+
+                    reportLog.from = name
+                    reportLog.to = log.from
+                    reportLog.messageId = log._id
+                    reportLog.why = why
+
+                    reportService.insert(reportLog)
+
+                    log.reportNum++
+
+                    var hash =HashMap<String,Any>()
+
+                    hash["reportNum"] = log.reportNum
+
+                    noteCommentLogService.updata(log._id!!,hash)
+
+                    //超过次数直接删除
+                    if (log.reportNum>= DELETE_NUM){
+
+                        noteCommentLogService.delete(log._id!!)
+
+                    }
+                    baseR.data =true
+
+                }else{
+
+                    baseR.data =false
+                }
+
+            }else{
+
+                baseR.code = NoteCommentLogErr.REPORT_ERR1.code
+                baseR.message = NoteCommentLogErr.REPORT_ERR1.message
             }
 
         }else{

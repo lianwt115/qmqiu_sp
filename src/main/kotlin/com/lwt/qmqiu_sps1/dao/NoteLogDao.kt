@@ -24,10 +24,12 @@ class NoteLogDao: BaseDaoInterface<NoteLog>,NoteLogDaoInterface<NoteLog> {
 
     override fun getAll(key: String, value: Any?): List<NoteLog> {
 
-        if (key == "" || value == null)
-            return mongoTemplate.findAll(NoteLog::class.java)
+        val query = Query(Criteria.where("deleteStatus").`is`(false))
 
-        val query = Query(Criteria.where(key).`is`(value))
+        if (key == "" || value == null)
+            return mongoTemplate.find(query,NoteLog::class.java)
+
+        query.addCriteria(Criteria.where(key).`is`(value))
 
         return mongoTemplate.find(query,NoteLog::class.java)
     }
@@ -39,11 +41,12 @@ class NoteLogDao: BaseDaoInterface<NoteLog>,NoteLogDaoInterface<NoteLog> {
 
         //所有公共帖子
         query1.addCriteria(Criteria.where("seeType").`is`(2))
+        query1.addCriteria(Criteria.where("deleteStatus").`is`(false))
 
         var public = mongoTemplate.find(query1,NoteLog::class.java)
 
         val query2 = Query(Criteria.where("noteType").`is`(noteType))
-
+        query2.addCriteria(Criteria.where("deleteStatus").`is`(false))
         //所有附近帖子
         query2.addCriteria(Criteria.where("seeType").`is`(1))
 
@@ -56,8 +59,6 @@ class NoteLogDao: BaseDaoInterface<NoteLog>,NoteLogDaoInterface<NoteLog> {
         return public
 
     }
-
-
 
     override fun insert(log: NoteLog) {
 
