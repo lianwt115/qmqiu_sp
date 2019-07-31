@@ -23,7 +23,7 @@ class ExceptionHandle {
      * @return
      * @throws Exception
      */
-    @ExceptionHandler(value = Exception::class)
+    @ExceptionHandler(value = [Exception::class])
     @ResponseBody
     @Throws(Exception::class)
     fun defaultErrorHandler(req: HttpServletRequest, e: Exception): BaseHttpResponse<WebErr> {
