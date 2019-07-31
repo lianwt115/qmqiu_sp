@@ -70,6 +70,7 @@ class BaseUserController {
         USER_NOTFIND(201,"用户不存在"),
         USER_EXIST(202,"注册失败,用户名已存在,请重新注册"),
         USER_PASSWORDERR(203,"用户密码错误"),
+        USER_EXIST1(203,"修改失败,昵称已存在"),
 
     }
 
@@ -107,7 +108,7 @@ class BaseUserController {
 
                 var savePassword = Base64Utils.encodeToString( RSAUtils.encryptData(password.toByteArray(),keyPair!!.public)!!)
 
-                var user=BaseUser(null,name,savePassword, getImgPath(), getColor(),Base64Utils.encodeToString(keyPair!!.private.encoded),Base64Utils.encodeToString(keyPair!!.public.encoded))
+                var user=BaseUser(null,name,savePassword, getImgPath(), getColor(),Base64Utils.encodeToString(keyPair.private.encoded),Base64Utils.encodeToString(keyPair.public.encoded))
 
                 userService.insert(user)
 
@@ -143,7 +144,7 @@ class BaseUserController {
 
                     //如果是自动登录,就验证密文,手动登录就将密文解密为明文对比
 
-                    var  savePassword = if (auto)userFind!!.password!! else String(RSAUtils.decryptData(Base64Utils.decodeFromString(userFind!!.password!!),RSAUtils.loadPrivateKey(userFind!!.privateKey!!))!!)
+                    var  savePassword = if (auto)userFind!!.password!! else String(RSAUtils.decryptData(Base64Utils.decodeFromString(userFind!!.password!!),RSAUtils.loadPrivateKey(userFind.privateKey!!))!!)
 
                     if (savePassword  == password){
 
@@ -193,7 +194,7 @@ class BaseUserController {
 
                     //如果是自动登录,就验证密文,手动登录就将密文解密为明文对比
 
-                    var  savePassword = if (auto)userFind!!.password!! else String(RSAUtils.decryptData(Base64Utils.decodeFromString(userFind!!.password!!),RSAUtils.loadPrivateKey(userFind!!.privateKey!!))!!)
+                    var  savePassword = if (auto)userFind!!.password!! else String(RSAUtils.decryptData(Base64Utils.decodeFromString(userFind!!.password!!),RSAUtils.loadPrivateKey(userFind.privateKey!!))!!)
 
                     if (savePassword  == password){
 
@@ -240,38 +241,6 @@ class BaseUserController {
         return baseR
     }
 
-
-    @PostMapping("/updata")
-    fun updata(@RequestParam("_id") _id:String,@RequestParam("name") name:String,@RequestParam("age") age:Int?=null,@RequestParam("male") male:Boolean?=null): BaseHttpResponse<Boolean> {
-
-        var baseR=BaseHttpResponse<Boolean>()
-        var hashMap = HashMap<String,Any>()
-
-        hashMap["name"] = name
-
-        if (age != null)
-            hashMap["age"] = age
-        if (male != null)
-            hashMap["male"] = male
-
-
-        when (userService.updata(_id,hashMap).modifiedCount) {
-            0L -> {
-
-                baseR.message = BaseUserErr.USER_NOTFIND.message
-                baseR.data=false
-
-            }
-
-            else -> {
-                baseR.data=true
-            }
-        }
-
-        return baseR
-    }
-
-
     @GetMapping("/findbyname")
     fun findById(@RequestParam("name") name:String): BaseHttpResponse<BaseUser> {
 
@@ -291,12 +260,61 @@ class BaseUserController {
     }
 
     @GetMapping("/findByName")
-    fun findByName(@RequestParam("name") name:String): BaseHttpResponse<Boolean> {
+    fun findByName(@RequestParam("id") id:String,@RequestParam("value") value:String): BaseHttpResponse<Boolean> {
 
         var baseR=BaseHttpResponse<Boolean>()
 
+        baseR.data = userService.findByKey(id,value) != null
 
-        baseR.data = userService.findByKey("name",name) != null
+        return baseR
+    }
+
+    @PostMapping("/updatauser")
+    fun updataUser(@RequestParam("name") name:String,@RequestParam("showname") showname:String,@RequestParam("age") age:Int,@RequestParam("male") male:Boolean,@RequestParam("imgpath") imgpath:String): BaseHttpResponse<BaseUser> {
+
+        var baseR=BaseHttpResponse<BaseUser>()
+
+
+        var user = userService.findByKey("name",name)
+
+        if (user!=null && user.status){
+
+            if (userService.findByKey("showName",showname)==null){
+
+                user.showName = showname
+
+                user.age = age
+
+                user.male = male
+
+                if (imgArray.contains(imgpath))
+                    user.imgPath =  imgpath
+
+                var hash = HashMap<String,Any>()
+
+                hash["showName"] = user.showName
+                hash["age"] = user.age
+                hash["male"] = user.male
+                hash["imgPath"] = user.imgPath
+
+
+                userService.updata(user._id!!,hash)
+
+                baseR.data = user
+
+            }else{
+
+                baseR.message = BaseUserErr.USER_EXIST1.message
+                baseR.code = BaseUserErr.USER_EXIST1.code
+            }
+
+
+        }else{
+
+            baseR.message = BaseUserErr.USER_NOTFIND.message
+            baseR.code = BaseUserErr.USER_NOTFIND.code
+
+        }
 
         return baseR
     }
@@ -320,7 +338,7 @@ class BaseUserController {
     fun insertLoginLog(userFind: BaseUser, time: Long, where: String, latitude: Double, longitude: Double,login:Boolean=true) {
 
 
-        var log = loginService.findByKey("name",userFind.name!!)
+        var log = loginService.findByKey("name",userFind.name)
 
         when (log) {
 

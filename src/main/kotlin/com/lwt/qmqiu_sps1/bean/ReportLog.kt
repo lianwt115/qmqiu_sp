@@ -17,7 +17,7 @@ data class ReportLog(
         //消息内容加密的
         var messageContent:String? = "",
         //消息id  即为消息日志中的时间
-        var messageId:Long? = 0,
+        var messageId:String? = "",
         //什么理由
         /**
          * 0.恋童癖,儿童色情

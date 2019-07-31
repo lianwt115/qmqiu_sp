@@ -2,12 +2,10 @@ package com.lwt.qmqiu_sps1.controller
 
 
 
-import com.lwt.qmqiu_sps1.bean.BaseHttpResponse
-import com.lwt.qmqiu_sps1.bean.BaseUser
-import com.lwt.qmqiu_sps1.bean.CoinLog
-import com.lwt.qmqiu_sps1.bean.ReportLog
+import com.lwt.qmqiu_sps1.bean.*
 import com.lwt.qmqiu_sps1.service.BaseUserService
 import com.lwt.qmqiu_sps1.service.CoinLogService
+import com.lwt.qmqiu_sps1.service.GiftLogService
 import com.lwt.qmqiu_sps1.service.ReportLogService
 import com.lwt.qmqiu_sps1.utils.RSAUtils
 import org.slf4j.LoggerFactory
@@ -46,6 +44,8 @@ class CoinLogController {
 
     @Autowired
     private lateinit var userService: BaseUserService
+    @Autowired
+    private lateinit var giftLogService: GiftLogService
 
     @GetMapping("/coinrecord")
     fun coinRecord(@RequestParam("name") name:String, @RequestParam("type") type:Int,@RequestParam("all") all:Boolean): BaseHttpResponse<List<CoinLog>> {
@@ -57,11 +57,11 @@ class CoinLogController {
 
         if (user != null) {
 
-            //0 充值(有记录未充值) 1消费
+            //0 充值(有记录未充值) 1消费 2兑换
 
             when (type) {
 
-                0,1 -> {
+                0,1,2-> {
 
                     var list = coinLogService.getAll("name",name)
 
@@ -269,6 +269,127 @@ class CoinLogController {
 
         return baseR
     }
+
+    //礼物兑换成青木球   礼物价值以70%的价值兑换成青木球  青木球以90%价值转换为充值   充值部分不予提现,兑换部分可提现
+    /**
+     * mongdb  事务后期优化
+     */
+    @PostMapping("/exchange")
+    fun exchange(@RequestParam("name") name:String, @RequestParam("giftIndex") giftIndex:String): BaseHttpResponse<BaseUser> {
+
+        var baseR= BaseHttpResponse<BaseUser>()
+
+        //检测用户合法性
+        var user = userService.findByKey("name",name)
+
+        if (user != null) {
+
+            //是否在线
+            if (user.status){
+
+                var giftListEx = giftIndex.split("*")
+                var giftListLocal = user.gift.split("*")
+
+                if (giftListEx.size == 4){
+                    //比较多少
+                    if (giftListLocal[0].toInt()>=giftListEx[0].toInt()
+
+                        && giftListLocal[1].toInt()>=giftListEx[1].toInt()
+                        && giftListLocal[2].toInt()>=giftListEx[2].toInt()
+                        && giftListLocal[3].toInt()>=giftListEx[3].toInt()
+
+
+                    ){
+
+                        //计算金额
+                        var giftPrice = GiftLogController.priceList
+
+                        var coinEx = (  giftListEx[0].toInt()*giftPrice[0] + giftListEx[1].toInt()*giftPrice[1] +
+
+                        giftListEx[2].toInt()*giftPrice[2] + giftListEx[3].toInt()*giftPrice[3])*0.7
+
+
+                        user.coin += coinEx.toInt()
+                        user.coinExchange += coinEx.toInt()
+
+                        user.gift = "${(giftListLocal[0].toInt()-giftListEx[0].toInt())}*${(giftListLocal[1].toInt()-giftListEx[1].toInt())}*${(giftListLocal[2].toInt()-giftListEx[2].toInt())}*${(giftListLocal[3].toInt()-giftListEx[3].toInt())}"
+
+
+                        var hash = HashMap<String,Any>()
+
+                        hash["coin"] = user.coin
+                        hash["coinExchange"] = user.coinExchange
+                        hash["gift"] = user.gift
+
+                        userService.updata(user._id!!,hash)
+
+                        //兑换记录
+                        var coinLog = CoinLog()
+
+                        coinLog.cash = coinEx.toInt()
+
+                        coinLog.coinType = 1
+                        //兑换
+                        coinLog.cashType = 2
+
+                        coinLog.name = name
+
+                        coinLogService.insert(coinLog)
+
+                        //礼物记录
+                        //插入购买记录,并修改个人信息
+                        var giftLog = GiftLog()
+
+                        giftLog.type = 2
+
+                        giftLog.cash = coinEx.toInt()
+
+                        giftLog.giftCount = "${(giftListEx[0].toInt())}*${(giftListEx[1].toInt())}*${(giftListEx[2].toInt())}*${(giftListEx[3].toInt())}"
+
+                        giftLog.name = name
+
+                        giftLog.from = name
+
+                        giftLog.to = "sys"
+
+                        giftLogService.insert(giftLog)
+
+                        baseR.data = user
+
+                    }else{
+
+                        //礼物个数校验
+                        baseR.code = CoinLogErr.ADMIN_ERR.code
+                        baseR.message = CoinLogErr.ADMIN_ERR.message
+
+                    }
+
+                }else{
+
+                    //参数格式校验
+                    baseR.code = CoinLogErr.ADMIN_ERR.code
+                    baseR.message = CoinLogErr.ADMIN_ERR.message
+                }
+
+
+            }else{
+
+                //校验是否登录
+                baseR.code = CoinLogErr.ADMIN_ERR.code
+                baseR.message = CoinLogErr.ADMIN_ERR.message
+            }
+
+        }else{
+
+            baseR.code = CoinLogErr.USER_NOTFIND.code
+            baseR.message = CoinLogErr.USER_NOTFIND.message
+
+        }
+
+        return baseR
+    }
+
+
 
 
 }

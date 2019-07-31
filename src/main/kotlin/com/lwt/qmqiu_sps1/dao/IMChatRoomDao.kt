@@ -17,7 +17,9 @@ import org.springframework.stereotype.Repository
 
 @Repository("imChatRoomDao")
 class IMChatRoomDao: BaseDaoInterface<IMChatRoom>,IMChatRoomDaoInterface<IMChatRoom> {
-
+    private val MAP_PATH_LATITUDE = 0.006
+    private val MAP_PATH_LONGITUDE = 0.0025
+    private val RETURN_LIST_SIZE = 10
 
     @Autowired
     private  lateinit var  mongoTemplate: MongoTemplate
@@ -31,16 +33,7 @@ class IMChatRoomDao: BaseDaoInterface<IMChatRoom>,IMChatRoomDaoInterface<IMChatR
 
         query.addCriteria(Criteria.where("status").`is`(true))
 
-        var list = mongoTemplate.find(query,IMChatRoom::class.java)
-
-        if (list?.size >20){
-
-            list.shuffle()
-
-            list= list.subList(0,20)
-        }
-
-        return list
+        return getBackList(mongoTemplate.find(query,IMChatRoom::class.java))
     }
 
     override fun getRoom(type: Int, latitude: Double, longitude: Double): List<IMChatRoom> {
@@ -49,11 +42,23 @@ class IMChatRoomDao: BaseDaoInterface<IMChatRoom>,IMChatRoomDaoInterface<IMChatR
 
         query.addCriteria(Criteria.where("status").`is`(true))
 
-        query.addCriteria(Criteria.where("latitude").gte(latitude-0.006).lte(latitude+0.006))
+        query.addCriteria(Criteria.where("latitude").gte(latitude-MAP_PATH_LATITUDE).lte(latitude+MAP_PATH_LATITUDE))
 
-        query.addCriteria(Criteria.where("longitude").gte(longitude-0.0025).lte(longitude+0.0025))
+        query.addCriteria(Criteria.where("longitude").gte(longitude-MAP_PATH_LONGITUDE).lte(longitude+MAP_PATH_LONGITUDE))
 
-        return mongoTemplate.find(query,IMChatRoom::class.java)
+        return getBackList(mongoTemplate.find(query,IMChatRoom::class.java))
+    }
+
+    private fun getBackList(list:MutableList<IMChatRoom>):List<IMChatRoom>{
+
+        if (list.size >RETURN_LIST_SIZE){
+
+            list.shuffle()
+
+            return list.subList(0,RETURN_LIST_SIZE)
+        }
+
+        return list
     }
 
     override fun getRoomOne(key: String, value: Any, latitude: Double, longitude: Double, check: Boolean): IMChatRoom? {
@@ -63,9 +68,9 @@ class IMChatRoomDao: BaseDaoInterface<IMChatRoom>,IMChatRoomDaoInterface<IMChatR
         query.addCriteria(Criteria.where("status").`is`(true))
 
         if (check) {
-            query.addCriteria(Criteria.where("latitude").gte(latitude-0.006).lte(latitude+0.006))
+            query.addCriteria(Criteria.where("latitude").gte(latitude-MAP_PATH_LATITUDE).lte(latitude+MAP_PATH_LATITUDE))
 
-            query.addCriteria(Criteria.where("longitude").gte(longitude-0.0025).lte(longitude+0.0025))
+            query.addCriteria(Criteria.where("longitude").gte(longitude-MAP_PATH_LONGITUDE).lte(longitude+MAP_PATH_LONGITUDE))
         }
 
 

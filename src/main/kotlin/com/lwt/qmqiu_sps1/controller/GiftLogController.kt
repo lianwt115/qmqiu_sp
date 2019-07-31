@@ -25,7 +25,7 @@ class GiftLogController {
 
        private val logger = LoggerFactory.getLogger(GiftLogController::class.java)
 
-       private val priceList = listOf(18,38,68,88)
+       val priceList = listOf(18,38,68,88)
        private val giftUnitList = listOf("个","朵","台","顶")
        private val giftNameList = listOf("天使宝贝","挚爱玫瑰","激情跑车","女王皇冠")
        private val giftPathList = listOf("angel.svga","rose.svga","posche.svga","kingset.svga")
@@ -69,7 +69,7 @@ class GiftLogController {
         if (user != null){
 
             //用户在线
-            if (user.status!!){
+            if (user.status){
 
                 try {
                     //检测数量
@@ -236,7 +236,7 @@ class GiftLogController {
         if (fromUser != null && toUser!=null){
 
             //送的人要在线
-            if (fromUser.status!! && name!=to ){
+            if (fromUser.status && name!=to ){
 
                 //送的人是否有足够礼物
                 try {
@@ -373,9 +373,28 @@ class GiftLogController {
 
             //根据类型来输出是收到还是送出
             //1收到  2 送出
-            if (type == 1 || type == 2){
+            if (type == 1 || type == 2 || type == 3){
 
                 var list = giftLogService.getAll(if (type == 1)"to" else "from",name)
+
+                if (type == 3){
+
+                    list = list.filter {
+
+                        it.type==2
+
+                    }
+
+                }
+                if (type == 2){
+
+                    list = list.filter {
+
+                        it.to!="sys"
+
+                    }
+
+                }
 
                 baseR.data = list
 

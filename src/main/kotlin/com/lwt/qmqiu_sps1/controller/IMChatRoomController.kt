@@ -18,6 +18,9 @@ class IMChatRoomController {
 
        private val logger = LoggerFactory.getLogger(IMChatRoomController::class.java)
        private val baseUrl = "http://localhost:9898/api/"
+       private val MAP_PATH_LATITUDE = 0.006
+       private val MAP_PATH_LONGITUDE = 0.0025
+
     }
 
     enum class IMChatErr(var code:Int,var message:String){
@@ -98,15 +101,13 @@ class IMChatRoomController {
 
                                 1 -> {
 
-                                    if (latitude-0.006 <room.latitude && latitude+0.006 >room.latitude &&  longitude-0.0025 <room.longitude && longitude+0.0025 >room.longitude)
-                                        if (room != null)
+                                    if (latitude- MAP_PATH_LATITUDE <room.latitude && latitude+ MAP_PATH_LATITUDE >room.latitude &&  longitude-MAP_PATH_LONGITUDE <room.longitude && longitude+MAP_PATH_LONGITUDE >room.longitude)
                                             list.add(room)
 
                                 }
 
                                 2,3-> {
 
-                                    if (room != null)
                                         list.add(room)
                                 }
                             }
@@ -128,6 +129,36 @@ class IMChatRoomController {
 
         if (baseR.data==null) {
             baseR.data = ArrayList<IMChatRoom>()
+        }
+
+        return baseR
+    }
+
+    @GetMapping("/search")
+    fun getSearchRoom(@RequestParam("name") name:String,@RequestParam("roomName") roomName:String, @RequestParam("latitude") latitude:Double,@RequestParam("longitude") longitude:Double,@RequestParam("type") type:Int): BaseHttpResponse<IMChatRoom> {
+
+        var baseR= BaseHttpResponse<IMChatRoom>()
+
+        //检测用户合法性
+        var user = userService.findByKey("name",name)
+
+        if (user != null){
+
+            var room =  imChatRoomService.getRoomOne("roomName",roomName,latitude,longitude,type==1)
+
+            if (room!=null && room.roomType == type)
+                baseR.data = room
+
+        }else{
+
+            baseR.code = IMChatErr.USER_NOTFIND.code
+            baseR.message = IMChatErr.USER_NOTFIND.message
+
+        }
+
+        if (baseR.data==null) {
+            baseR.code = IMChatErr.ROOM_NOTFIND.code
+            baseR.message = IMChatErr.ROOM_NOTFIND.message
         }
 
         return baseR

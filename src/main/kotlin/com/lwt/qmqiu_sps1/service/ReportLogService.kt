@@ -7,6 +7,7 @@ import com.lwt.qmqiu_sps1.dao.RefuseLogDao
 import com.lwt.qmqiu_sps1.dao.ReportLogDao
 import com.lwt.qmqiu_sps1.myinterface.BaseDaoInterface
 import com.lwt.qmqiu_sps1.myinterface.RefuseLogDaoInterface
+import com.lwt.qmqiu_sps1.myinterface.ReportLogDaoInterface
 import com.mongodb.client.result.DeleteResult
 import com.mongodb.client.result.UpdateResult
 import org.springframework.beans.factory.annotation.Autowired
@@ -14,7 +15,7 @@ import org.springframework.stereotype.Service
 
 
 @Service("reportLogService")
-class ReportLogService:BaseDaoInterface<ReportLog> {
+class ReportLogService:BaseDaoInterface<ReportLog>,ReportLogDaoInterface<ReportLog> {
 
 
 
@@ -33,6 +34,11 @@ class ReportLogService:BaseDaoInterface<ReportLog> {
     override fun findByKey(key: String, value: Any): ReportLog? {
 
         return reportLogDao.findByKey(key,value)
+    }
+
+    override fun checkReport(from: String, to: String, id: String): Boolean {
+
+        return reportLogDao.checkReport(from,to,id)
     }
 
     override fun updata(_id: String, data: HashMap<String, Any>): UpdateResult {

@@ -181,7 +181,7 @@ class QMMessageController {
                             //检测用户合法性
                             var sendUser = userService.findByKey("name",sendName)
                             if (sendUser!=null){
-                                qmMessage.imgPath = sendUser.imgPath!!
+                                qmMessage.imgPath = sendUser.imgPath
                             }
                             baseR.data = qmMessage
                         }else{

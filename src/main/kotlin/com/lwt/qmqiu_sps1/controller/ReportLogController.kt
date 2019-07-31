@@ -10,8 +10,6 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.*
 
-
-
 @RestController
 @RequestMapping("/report")
 class ReportLogController {
@@ -27,6 +25,7 @@ class ReportLogController {
         USER_NOTFIND(201,"举报失败,用户不存在"),
         TYPE_ERR(202,"举报失败,类型错误"),
         DB_ERR(203,"举报失败,数据库错误"),
+        REPORT_ERR(204,"举报失败,重复举报"),
 
     }
 
@@ -37,7 +36,7 @@ class ReportLogController {
     private lateinit var userService: BaseUserService
 
     @PostMapping("/reportuser")
-    fun refuseLog(@RequestParam("from") from:String, @RequestParam("to") to:String,@RequestParam("why") why:Int,@RequestParam("roomNumber") roomNumber:String,@RequestParam("messageContent") messageContent:String,@RequestParam("messageId") messageId:Long): BaseHttpResponse<Boolean> {
+    fun refuseLog(@RequestParam("from") from:String, @RequestParam("to") to:String,@RequestParam("why") why:Int,@RequestParam("roomNumber") roomNumber:String,@RequestParam("messageContent") messageContent:String,@RequestParam("messageId") messageId:String): BaseHttpResponse<Boolean> {
 
         var baseR= BaseHttpResponse<Boolean>()
 
@@ -49,31 +48,37 @@ class ReportLogController {
 
             if (why in 0..5){
 
-                var reportLog = ReportLog()
+                if (!reportLogService.checkReport(from,to,messageId)) {
 
-                reportLog.from = from
-                reportLog.to = to
-                reportLog.why = why
-                reportLog.roomNumber = roomNumber
-                reportLog.messageContent = messageContent
-                reportLog.messageId = messageId
+                    var reportLog = ReportLog()
+
+                    reportLog.from = from
+                    reportLog.to = to
+                    reportLog.why = why
+                    reportLog.roomNumber = roomNumber
+                    reportLog.messageContent = messageContent
+                    reportLog.messageId = messageId
 
 
 
-                var hash =HashMap<String,Any>()
+                    var hash =HashMap<String,Any>()
 
-                hash["reported"] = userTo.reported+1
+                    hash["reported"] = userTo.reported+1
 
-                when (userService.updata(userTo._id!!,hash).modifiedCount) {
+                    when (userService.updata(userTo._id!!,hash).modifiedCount) {
 
-                    0L -> {
+                        0L -> {
 
+                        }
+                        else -> {
+                            reportLogService.insert(reportLog)
+
+                        }
                     }
-                    else -> {
-                        reportLogService.insert(reportLog)
-                        baseR.data = true
-                    }
+
                 }
+
+                baseR.data = true
 
             }else{
 
